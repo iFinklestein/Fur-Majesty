@@ -1,0 +1,32 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs & env
+*.log
+npm-debug.log*
+yarn-*.log*
+pnpm-debug.log*
+.env
+.env.*.local
+
+# Node/Vite/Tailwind
+node_modules/
+dist/
+build/
+.cache/
+.next/
+out/
+*.local
+
+# Testing/coverage (if added later)
+coverage/
+
+# Storybook (if added later)
+.storybook/
+storybook-static/
+
+# TypeScript cache (if you later enable TS)
+*.tsbuildinfo
