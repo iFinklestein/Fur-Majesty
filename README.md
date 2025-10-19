@@ -7,13 +7,12 @@ Built with **React + Vite + Tailwind CSS**.
 ---
 
 ## Features
-- Feeding schedules with multiple daily times  
-- Medication tracking with reminders  
-- Vet visit logs with vaccine record uploads  
-- Grooming records  
-- Task manager (unified across feedings, meds, and visits)  
-- Notes per pet for custom tracking  
-- Multi-pet support  
+- Feeding schedules
+- Medication tracking
+- Vet visits & grooming logs
+- Tasks & reminders
+- Notes section
+- Multi-phase rollout roadmap  
 
 ---
 

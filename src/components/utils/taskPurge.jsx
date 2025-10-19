@@ -1,56 +1,82 @@
-import { Task } from "@/api/entities";
-import { User } from "@/api/entities";
-import { subDays, isBefore } from 'date-fns';
+// src/components/utils/taskPurge.jsx
+// Utility helpers for purging completed tasks on demand or on a schedule.
 
-let isPurging = false;
+import { purgeCompletedTasks } from '/src/api/entities.js';
+import { useEffect, useRef } from 'react';
 
-export async function scheduleAutoPurge() {
-  if (isPurging) {
-    console.log("Purge already in progress.");
-    return;
-  }
-  
-  isPurging = true;
-  console.log("Starting automatic task purge...");
-
-  try {
-    const user = await User.me();
-    const retentionDays = user.taskHistoryRetentionDays;
-
-    if (!retentionDays || retentionDays <= 0) {
-      console.log("Auto-purge is disabled. Exiting.");
-      return;
-    }
-
-    const cutoffDate = subDays(new Date(), retentionDays);
-    
-    // Fetch all completed tasks for the user
-    const completedTasks = await Task.filter({ 
-      created_by: user.email, 
-      status: 'done' 
-    });
-
-    const tasksToPurge = completedTasks.filter(task => 
-      task.completedAt && isBefore(new Date(task.completedAt), cutoffDate)
-    );
-
-    if (tasksToPurge.length === 0) {
-      console.log("No old completed tasks to purge.");
-      return;
-    }
-
-    console.log(`Purging ${tasksToPurge.length} completed tasks older than ${retentionDays} days.`);
-
-    // Delete tasks in chunks to avoid overwhelming the API
-    const deletePromises = tasksToPurge.map(task => Task.delete(task.id));
-    await Promise.all(deletePromises);
-
-    console.log("Purge completed successfully.");
-
-  } catch (error) {
-    console.error("Error during automatic task purge:", error);
-    // Optionally, show a non-blocking toast to the user
-  } finally {
-    isPurging = false;
-  }
+/**
+ * Run the purge once (convenience wrapper).
+ * @param {{olderThanDays?: number}} opts
+ * @returns {Promise<{purged:number, mode:string}>}
+ */
+export async function runPurge(opts = {}) {
+  const olderThanDays = Number(opts.olderThanDays ?? 30);
+  return await purgeCompletedTasks({ olderThanDays });
 }
+
+/**
+ * Start a repeating purge. Returns a handle with stop().
+ *
+ * @param {{
+ *   enabled?: boolean,
+ *   intervalMinutes?: number,
+ *   olderThanDays?: number,
+ *   onResult?: (res:{purged:number,mode:string}) => void,
+ *   onError?: (err:Error) => void
+ * }} opts
+ */
+export function scheduleAutoPurge(opts = {}) {
+  const enabled = opts.enabled !== false;
+  const intervalMinutes = Math.max(1, Number(opts.intervalMinutes ?? 60));
+  const olderThanDays = Number(opts.olderThanDays ?? 30);
+  const onResult = typeof opts.onResult === 'function' ? opts.onResult : () => {};
+  const onError = typeof opts.onError === 'function' ? opts.onError : console.error;
+
+  if (!enabled) return { stop() {}, isRunning: false };
+
+  let stopped = false;
+
+  async function tick() {
+    try {
+      const res = await purgeCompletedTasks({ olderThanDays });
+      onResult(res);
+    } catch (err) {
+      onError(err);
+    }
+  }
+
+  // run immediately once, then on interval
+  tick();
+  const id = setInterval(tick, intervalMinutes * 60 * 1000);
+
+  return {
+    stop() {
+      if (!stopped) {
+        clearInterval(id);
+        stopped = true;
+      }
+    },
+    isRunning: true,
+    intervalMinutes,
+    olderThanDays
+  };
+}
+
+/**
+ * React hook version. Starts the schedule on mount and stops on unmount.
+ * Re-starts if key options change.
+ */
+export function useAutoPurge(opts = {}) {
+  const handleRef = useRef(null);
+
+  useEffect(() => {
+    if (handleRef.current) handleRef.current.stop();
+    handleRef.current = scheduleAutoPurge(opts);
+    return () => {
+      if (handleRef.current) handleRef.current.stop();
+    };
+    // re-run only when these core options change
+  }, [opts.enabled, opts.intervalMinutes, opts.olderThanDays]);
+}
+
+export default { runPurge, scheduleAutoPurge, useAutoPurge };

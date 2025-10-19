@@ -1,0 +1,74 @@
+/* =========================================================
+   ✅ Fur Majesty Global Brand Configuration
+   SINGLE SOURCE OF TRUTH FOR BRAND COLORS & ICONOGRAPHY
+   ========================================================= */
+
+/* 🔥 Brand Color (Universal Accent Color) */
+:root {
+  --accent: #e906d3; /* ⬅ YOUR FINAL, APPROVED MAGENTA */
+  --accent-rgb: 233, 6, 211; /* optional if you need translucency */
+
+  /* ✅ Brand Chevron Icon (Downward caret, thick V shape) */
+  --chev-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+}
+
+/* =========================================================
+   🎨 Global Utility Classes (Use Instead of Hardcoded Styles)
+   ========================================================= */
+.text-accent {
+  color: var(--accent);
+}
+.bg-accent {
+  background-color: var(--accent);
+}
+.border-accent {
+  border-color: var(--accent);
+}
+
+/* Used on all rectangular action buttons with accent background */
+.button-accent {
+  border-radius: 0;
+  border: 1px solid #000;
+  background-color: #000;
+  color: var(--accent);
+  font-weight: 700;
+  padding: 8px 14px;
+}
+
+/* Used on secondary buttons (white background) */
+.button-outline {
+  border-radius: 0;
+  border: 1px solid #000;
+  background-color: #fff;
+  color: #000;
+  font-weight: 700;
+  padding: 8px 14px;
+}
+
+/* =========================================================
+   ⬇ Chevron Styling (Unified Across All UI Components)
+   ========================================================= */
+.select-chevron {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: var(--chev-svg);
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 18px 18px;
+  padding-right: 36px;
+}
+
+/* Generic chevron icon for Dose History and accordion UI */
+.chev-icon {
+  width: 18px;
+  height: 18px;
+  background-image: var(--chev-svg);
+  background-repeat: no-repeat;
+  background-size: 18px 18px;
+  flex: 0 0 18px;
+  transition: transform 160ms ease;
+}
+.chev-icon.rot-180 {
+  transform: rotate(180deg);
+}
