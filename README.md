@@ -7,7 +7,6 @@ Built with **React + Vite + Tailwind CSS**.
 ---
 
 ## Features
-- Feeding schedules
 - Medication tracking
 - Vet visits & grooming logs
 - Tasks & reminders
@@ -38,8 +37,8 @@ npm run dev
 ---
 
 ## Roadmap
-- Phase 1.0: Core app (feeding, medications, vet visits, grooming, tasks, notes)  
-- Phase 1.1: Pet Sitter Lite (read-only pet data + walking schedule)  
+- Phase 1.0: Core app (vaccines, medications, vet visits, grooming, tasks, notes)  
+- Phase 1.1: Pet Sitter Lite (read-only pet data + walking schedule, feeding schedule)  
 - Phase 2.0: Breeder role and Pet Sitter Full (expanded features)  
 - Phase 3.0: Vet Clinic role (upload results, send reminders, appointments)  
 - Future: Boarder role, Trainer role, community features  
