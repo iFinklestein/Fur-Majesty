@@ -1,140 +1,93 @@
-import React, { useState } from "react";
-import { PetNote } from "@/api/entities";
-import { format } from "date-fns";
-import {
-  Notebook,
-  Plus,
-  Edit,
-  Trash2
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+// src/components/pets/PetNotes.jsx
+import PropTypes from "prop-types";
+import { useEffect, useState, useCallback } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
-export default function PetNotes({ petId, notes, onUpdate }) {
-  const [showDialog, setShowDialog] = useState(false);
-  const [editingNote, setEditingNote] = useState(null);
-  const [noteText, setNoteText] = useState("");
+export default function PetNotes({ petId }) {
+  const [notes, setNotes] = useState([]);
+  const [note, setNote] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleAddNew = () => {
-    setEditingNote(null);
-    setNoteText("");
-    setShowDialog(true);
-  };
+  const loadNotes = useCallback(async () => {
+    if (!petId) return;
+    const { data, error } = await supabase
+      .from("pet_notes")
+      .select("*")
+      .eq("pet_id", petId)
+      .order("created_at", { ascending: true });
 
-  const handleEdit = (note) => {
-    setEditingNote(note);
-    setNoteText(note.text);
-    setShowDialog(true);
-  };
+    if (!error && data) setNotes(data);
+  }, [petId]);
 
-  const handleDelete = async (noteId) => {
-    if (window.confirm("Are you sure you want to delete this note?")) {
-      try {
-        await PetNote.delete(noteId);
-        onUpdate();
-      } catch (error) {
-        console.error("Error deleting note:", error);
-        alert("Failed to delete note.");
-      }
-    }
-  };
+  useEffect(() => {
+    // Load whenever petId changes
+    loadNotes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [petId]);
 
-  const handleSubmit = async (e) => {
+  const addNote = async (e) => {
     e.preventDefault();
-    if (!noteText.trim()) return;
+    if (!note.trim()) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("pet_notes")
+      .insert([{ pet_id: petId, body: note.trim() }])
+      .select()
+      .single();
+    setLoading(false);
+    if (error) return;
+    setNote("");
+    setNotes((prev) => [...prev, data]);
+  };
 
-    try {
-      if (editingNote) {
-        await PetNote.update(editingNote.id, { text: noteText });
-      } else {
-        await PetNote.create({ petId, text: noteText });
-      }
-      onUpdate();
-      setShowDialog(false);
-    } catch (error) {
-      console.error("Error saving note:", error);
-      alert("Failed to save note.");
-    }
+  const deleteNote = async (id) => {
+    await supabase.from("pet_notes").delete().eq("id", id);
+    setNotes((prev) => prev.filter((n) => n.id !== id));
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2">
-          <Notebook className="w-5 h-5 text-gray-500" />
-          Notes
-        </CardTitle>
-        <Button size="sm" onClick={handleAddNew}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Note
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {notes.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
-            <p>No notes yet. Add your first one.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {notes.map((note) => (
-              <div key={note.id} className="p-3 border rounded-lg group">
-                <p className="text-sm text-gray-800 whitespace-pre-wrap">{note.text}</p>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                  <p className="text-xs text-gray-500">
-                    {format(new Date(note.updated_date), "MMM d, yyyy 'at' h:mm a")}
-                  </p>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(note)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(note.id)}>
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontWeight: 400, marginBottom: 8 }}>Notes</div>
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingNote ? "Edit Note" : "Add New Note"}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="note-text" className="sr-only">Note</Label>
-              <Textarea
-                id="note-text"
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Write your note here..."
-                rows={8}
-                required
-              />
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit">Save Note</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </Card>
+      <form onSubmit={addNote}>
+        <input
+          placeholder="Write a note..."
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          style={{ marginRight: 8, minWidth: 240 }}
+          required
+        />
+        <button type="submit" disabled={loading} className="btn">
+          {loading ? "Adding…" : "Add Note"}
+        </button>
+      </form>
+
+      {notes.length === 0 ? (
+        <p style={{ marginTop: 8, color: "#666" }}>No notes yet.</p>
+      ) : (
+        <ul style={{ marginTop: 8 }}>
+          {notes.map((n) => (
+            <li key={n.id} style={{ marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: "#666" }}>
+                {n.created_at ? `${new Date(n.created_at).toLocaleString()}: ` : ""}
+              </span>
+              <span>{n.body ?? ""}</span>
+              <button
+                onClick={() => deleteNote(n.id)}
+                style={{ marginLeft: 10 }}
+                title="Delete note"
+                className="btn"
+              >
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
+
+PetNotes.propTypes = {
+  petId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+};

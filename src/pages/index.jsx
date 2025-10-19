@@ -1,99 +1,125 @@
-import Layout from "./Layout.jsx";
+// src/pages/index.jsx
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+// ✅ Correct named import (matches your export)
+import { supabase } from "../lib/supabaseClient";
 
-import Dashboard from "./Dashboard";
+export default function SignIn() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState("signin");
 
-import Pets from "./Pets";
+  async function handleSignIn(e) {
+    e.preventDefault();
+    if (!email || !password) return;
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setBusy(false);
+    if (error) { alert(error.message); return; }
+    navigate("/dashboard", { replace: true });
+  }
 
-import VetVisits from "./VetVisits";
+  async function handleSignUp(e) {
+    e.preventDefault();
+    if (!email || !password) return;
+    setBusy(true);
+    const { error } = await supabase.auth.signUp({ email, password });
+    setBusy(false);
+    if (error) { alert(error.message); return; }
+    alert("Account created. Please check your email to confirm your address.");
+  }
 
-import Medications from "./Medications";
+  async function handleForgot() {
+    if (!email) { alert("Enter your email above first, then tap Forgot Password."); return; }
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/signin`,
+    });
+    setBusy(false);
+    if (error) { alert(error.message); return; }
+    alert("Password reset email sent. Check your inbox.");
+  }
 
-import Settings from "./Settings";
+  return (
+    <div className="page" style={{ display: "flex", justifyContent: "center" }}>
+      <div className="card" style={{ maxWidth: 420, width: "100%", borderRadius: 12, padding: 16 }}>
+        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Fur Majesty</h2>
+        <div style={{ color: "var(--muted,#666)", marginBottom: 16 }}>
+          {mode === "signin" ? "Welcome. Sign in to see your pets and tasks." : "Create your account to get started."}
+        </div>
 
-import PetDetail from "./PetDetail";
+        <form onSubmit={mode === "signin" ? handleSignIn : handleSignUp}>
+          <label style={{ display: "block", marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: "var(--muted,#666)", marginBottom: 6 }}>Email</div>
+            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+          </label>
 
-import Grooming from "./Grooming";
+          <label style={{ display: "block", marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: "var(--muted,#666)", marginBottom: 6 }}>Password</div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                required style={{ flex: 1 }}
+              />
+              {mode === "signin" && (
+                <button type="submit" disabled={busy}
+                  style={{
+                    appearance: "none", border: 0, padding: "8px 12px", borderRadius: 0,
+                    background: "#000", color: "#e906d3", fontWeight: 700, cursor: "pointer", minWidth: 80
+                  }}>
+                  {busy ? "…" : "Sign In"}
+                </button>
+              )}
+            </div>
+          </label>
 
-import Feeding from "./Feeding";
+          {mode === "signin" && (
+            <button type="button" onClick={handleForgot} disabled={busy}
+              style={{
+                border: 0, background: "transparent", color: "#5b5bd6", padding: 0, marginTop: 2,
+                textDecoration: "none", cursor: "pointer"
+              }}>
+              Forgot Password
+            </button>
+          )}
 
-import Tasks from "./Tasks";
+          {mode === "signup" && (
+            <button type="submit" disabled={busy}
+              style={{
+                width: "100%", marginTop: 12, appearance: "none", border: 0, borderRadius: 0, padding: "10px 12px",
+                background: "#000", color: "#e906d3", fontWeight: 800, cursor: "pointer"
+              }}>
+              {busy ? "…" : "Sign Up"}
+            </button>
+          )}
+        </form>
 
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
-
-const PAGES = {
-    
-    Dashboard: Dashboard,
-    
-    Pets: Pets,
-    
-    VetVisits: VetVisits,
-    
-    Medications: Medications,
-    
-    Settings: Settings,
-    
-    PetDetail: PetDetail,
-    
-    Grooming: Grooming,
-    
-    Feeding: Feeding,
-    
-    Tasks: Tasks,
-    
-}
-
-function _getCurrentPage(url) {
-    if (url.endsWith('/')) {
-        url = url.slice(0, -1);
-    }
-    let urlLastPart = url.split('/').pop();
-    if (urlLastPart.includes('?')) {
-        urlLastPart = urlLastPart.split('?')[0];
-    }
-
-    const pageName = Object.keys(PAGES).find(page => page.toLowerCase() === urlLastPart.toLowerCase());
-    return pageName || Object.keys(PAGES)[0];
-}
-
-// Create a wrapper component that uses useLocation inside the Router context
-function PagesContent() {
-    const location = useLocation();
-    const currentPage = _getCurrentPage(location.pathname);
-    
-    return (
-        <Layout currentPageName={currentPage}>
-            <Routes>            
-                
-                    <Route path="/" element={<Dashboard />} />
-                
-                
-                <Route path="/Dashboard" element={<Dashboard />} />
-                
-                <Route path="/Pets" element={<Pets />} />
-                
-                <Route path="/VetVisits" element={<VetVisits />} />
-                
-                <Route path="/Medications" element={<Medications />} />
-                
-                <Route path="/Settings" element={<Settings />} />
-                
-                <Route path="/PetDetail" element={<PetDetail />} />
-                
-                <Route path="/Grooming" element={<Grooming />} />
-                
-                <Route path="/Feeding" element={<Feeding />} />
-                
-                <Route path="/Tasks" element={<Tasks />} />
-                
-            </Routes>
-        </Layout>
-    );
-}
-
-export default function Pages() {
-    return (
-        <Router>
-            <PagesContent />
-        </Router>
-    );
+        <div style={{ marginTop: 14 }}>
+          {mode === "signin" ? (
+            <button type="button" onClick={() => setMode("signup")} disabled={busy}
+              style={{
+                appearance: "none", border: "1px solid #111", borderRadius: 0, padding: "8px 12px",
+                background: "#fff", color: "#111", fontWeight: 700, cursor: "pointer"
+              }}>
+              Sign Up
+            </button>
+          ) : (
+            <button type="button" onClick={() => setMode("signin")} disabled={busy}
+              style={{
+                appearance: "none", border: "1px solid #111", borderRadius: 0, padding: "8px 12px",
+                background: "#fff", color: "#111", fontWeight: 700, cursor: "pointer"
+              }}>
+              Back to Sign In
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

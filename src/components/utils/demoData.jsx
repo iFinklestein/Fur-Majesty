@@ -2,7 +2,7 @@ import { Pet } from "@/api/entities";
 import { VetVisit } from "@/api/entities";
 import { Medication } from "@/api/entities";
 import { Grooming } from "@/api/entities";
-import { Feeding } from "@/api/entities/Feeding";
+//import { Feeding } from "@/api/entities";
 import { addDays, format } from "date-fns";
 
 export const seedDemoData = async () => {

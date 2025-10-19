@@ -41,6 +41,9 @@ export function scheduleGenerateTodayTasks(opts = {}) {
   timer = setTimeout(() => runGenerate(opts), 200);
 }
 
+export { scheduleGenerateTodayTasks as generateTodayTasks };
+
+
 // Internal generation function
 async function runGenerate({ now = new Date() } = {}) {
   if (isGenerating) {
