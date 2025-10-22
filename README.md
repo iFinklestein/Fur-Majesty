@@ -1,7 +1,7 @@
 # Fur Majesty
 
 Draíocht Studios **Fur Majesty** is a modern pet care management app.  
-Track feeding, medications, vet visits, grooming, and tasks — all in one place.  
+Track medications, vet visits, grooming, and tasks — all in one place.  
 Built with **React + Vite + Tailwind CSS**.
 
 ---

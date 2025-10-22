@@ -1,218 +1,234 @@
-// FILE: src/components/vaccines/VaccineRecords.jsx
+// src/components/vaccines/VaccineRecords.jsx
 import { useEffect, useMemo, useState } from "react";
+import { listPets } from "@/api/entities";
 import {
-  listVaccineRecords,
-  addVaccineRecord,
-  deleteVaccineRecord,
-  getVaccineFileUrl,
-  VACCINE_TYPES,
-  monthsFor,
-} from "../../api/vaccines.js";
-import { listPets } from "../../api/entities.js";
+  COMMON_VACCINES,
+  VaccineRecords as API,
+  calcExpiry,
+} from "@/api/vaccines";
 
-function fmtDate(d) {
-  if (!d) return "";
-  const dt = d instanceof Date ? d : new Date(d);
-  return dt.toLocaleDateString();
-}
-
-function statusMeta(expires_on) {
-  if (!expires_on) return { label: "No expiry", cls: "badge badge-due" };
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const exp = new Date(expires_on); exp.setHours(0, 0, 0, 0);
-  const days = Math.ceil((exp.getTime() - today.getTime()) / 86400000);
-  if (days < 0) return { label: `Expired ${Math.abs(days)}d`, cls: "badge badge-expired" };
-  if (days <= 30) return { label: `Expires in ${days}d`, cls: "badge badge-due" };
-  return { label: "Valid", cls: "badge badge-valid" };
-}
+const CHEV_BG =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>\")";
 
 export default function VaccineRecords() {
   const [pets, setPets] = useState([]);
   const [petId, setPetId] = useState("");
-  const [records, setRecords] = useState([]);
 
-  const [givenOn, setGivenOn] = useState(() => new Date().toISOString().slice(0, 10));
-  const [title, setTitle] = useState(VACCINE_TYPES[0]?.value ?? "Rabies (1 yr)");
-  const [notes, setNotes] = useState("");
+  const [vaccine, setVaccine] = useState("");
+  const [givenOn, setGivenOn] = useState("");     // yyyy-mm-dd
+  const [expiresOn, setExpiresOn] = useState(""); // yyyy-mm-dd (auto)
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // Load pets
   useEffect(() => {
     (async () => {
       const list = await listPets();
-      setPets(list);
-      if (list?.length && !petId) setPetId(list[0].id);
-    })().catch(console.error);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      setPets(list || []);
+      const first = list?.[0];
+      const idKey = first?.id ?? first?.pet_id ?? first?.petId ?? "";
+      if (idKey) setPetId(String(idKey));
+    })();
   }, []);
 
-  const petOptions = useMemo(() => pets.map((p) => ({ id: p.id, name: p.name })), [pets]);
-
-  // Expiry preview
-  const expiresPreview = useMemo(() => {
-    try {
-      const months = monthsFor(title);
-      const dt = new Date(givenOn || new Date());
-      dt.setMonth(dt.getMonth() + months);
-      return dt.toISOString().slice(0, 10);
-    } catch { return ""; }
-  }, [title, givenOn]);
-
-  // Load records for pet
+  // Auto-calc expiry as ISO, display formatted
   useEffect(() => {
-    if (!petId) return;
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const data = await listVaccineRecords(petId);
-        if (!cancelled) setRecords(data || []);
-      } catch (e) {
-        if (!cancelled) alert("Failed to load vaccine records");
-        console.error(e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [petId]);
+    if (vaccine && givenOn) setExpiresOn(calcExpiry(vaccine, givenOn));
+    else setExpiresOn("");
+  }, [vaccine, givenOn]);
 
-  async function onAdd() {
-    if (!petId || !title || !givenOn) {
-      alert("Pet, vaccine, and date are required.");
-      return;
+  // Fetch records for pet
+  async function refresh(pid = petId) {
+    if (!pid) { setRows([]); return; }
+    setLoading(true);
+    try {
+      const data = await API.listByPet(pid);
+      setRows(data);
+    } finally {
+      setLoading(false);
     }
+  }
+  useEffect(() => { refresh(petId); }, [petId]);
+
+  // Select options
+  const petOptions = useMemo(() => {
+    return (pets || [])
+      .map((p) => {
+        const idVal = p.id ?? p.pet_id ?? p.petId;
+        return { value: String(idVal), label: p.name ?? p.pet_name ?? "Pet" };
+      })
+      .filter((o) => o.value && o.value !== "undefined");
+  }, [pets]);
+
+  function resetForm() {
+    setVaccine("");
+    setGivenOn("");
+    setExpiresOn("");
+    setFile(null);
+  }
+
+  async function handleAdd() {
+    const cleanPetId = (petId || "").trim();
+    if (!cleanPetId) { alert("Select a pet first."); return; }
+    if (!vaccine) { alert("Select a vaccine."); return; }
+    if (!givenOn) { alert("Pick the shot date."); return; }
+
     setSaving(true);
     try {
-      await addVaccineRecord({
-        pet_id: petId,
-        title,
-        given_on: givenOn,
-        notes: notes?.trim() || null,
+      await API.add({
+        pet_id: cleanPetId,
+        vaccine,
+        given_on: givenOn,           // ISO yyyy-mm-dd
+        expires_on: expiresOn || null, // ISO yyyy-mm-dd
         file,
       });
-      const data = await listVaccineRecords(petId);
-      setRecords(data || []);
-      setNotes(""); setFile(null);
-      alert("Vaccine record added.");
+      resetForm();
+      await refresh(cleanPetId);
     } catch (e) {
-      alert("Failed to add vaccine record");
       console.error(e);
+      alert("Failed to add vaccine record.");
     } finally {
       setSaving(false);
     }
   }
 
-  async function onDelete(record) {
-    const id = typeof record === "string" ? record : record?.id;
-    if (!id) { alert("Missing record id."); return; }
-    if (!confirm("Delete this record?")) return;
-
-    setLoading(true);
+  async function handleDelete(id) {
+    if (!window.confirm("Delete this vaccine record?")) return;
     try {
-      const file_path = typeof record === "string" ? null : record?.file_path ?? null;
-      await deleteVaccineRecord(id, file_path);
-      const data = await listVaccineRecords(petId);
-      setRecords(data || []);
+      await API.remove(id);
+      await refresh();
     } catch (e) {
-      alert("Failed to delete vaccine record");
       console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function onView(filePath) {
-    try {
-      const url = await getVaccineFileUrl(filePath);
-      if (url) window.open(url, "_blank", "noopener");
-    } catch (e) {
-      alert("Could not open the file");
-      console.error(e);
+      alert("Failed to delete record.");
     }
   }
 
   return (
-    <div className="page" style={{ maxWidth: 1040 }}>
-      <h2>Vaccinations</h2>
+    <div className="page" style={{ paddingTop: 8 }}>
+      {/* Form card */}
+      <div className="card" style={{ padding: 12, marginBottom: 12, maxWidth: 460, marginInline: "auto" }}>
+        {/* Pet */}
+        <select
+          value={petId}
+          onChange={(e) => setPetId(e.target.value)}
+          className="rounded border px-3 py-2 w-full"
+          style={{
+            WebkitAppearance: "none", appearance: "none",
+            backgroundImage: CHEV_BG, backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 10px center", backgroundSize: "18px 18px",
+          }}
+        >
+          <option value="" disabled>Pet</option>
+          {petOptions.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
 
-      {/* Form */}
-      <div className="panel" style={{ marginBottom: 16 }}>
-        <div className="grid" style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr" }}>
-          <label className="flex flex-col">
-            <span className="small muted">Pet</span>
-            <select value={petId} onChange={(e) => setPetId(e.target.value)}>
-              {petOptions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </label>
+        {/* Vaccine */}
+        <select
+          value={vaccine}
+          onChange={(e) => setVaccine(e.target.value)}
+          className="rounded border px-3 py-2 w-full"
+          style={{
+            marginTop: 8, WebkitAppearance: "none", appearance: "none",
+            backgroundImage: CHEV_BG, backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 10px center", backgroundSize: "18px 18px",
+          }}
+        >
+          <option value="" disabled>Vaccine</option>
+          {COMMON_VACCINES.map((v) => <option key={v} value={v}>{v}</option>)}
+        </select>
 
-          <label className="flex flex-col">
-            <span className="small muted">Vaccine</span>
-            <select value={title} onChange={(e) => setTitle(e.target.value)}>
-              {VACCINE_TYPES.map((v) => <option key={v.value} value={v.value}>{v.value}</option>)}
-            </select>
-          </label>
+        {/* Date (given) */}
+        <input
+          type="date"
+          value={givenOn}
+          onChange={(e) => setGivenOn(e.target.value)}
+          className="rounded border px-3 py-2 w-full"
+          style={{ marginTop: 8 }}
+          placeholder="Date"
+        />
 
-          <label className="flex flex-col">
-            <span className="small muted">Date</span>
-            <input type="date" value={givenOn} onChange={(e) => setGivenOn(e.target.value)} />
-          </label>
+        {/* Expires (Auto calculated) — display MM/DD/YYYY */}
+        <input
+          type="text"
+          value={formatMDY(expiresOn)}
+          readOnly
+          className="rounded border px-3 py-2 w-full"
+          style={{ marginTop: 8, background: "#f7f7f7", color: "#555" }}
+          placeholder="Expires (Auto calculated)"
+          aria-label="Expires (Auto calculated)"
+          title="Auto-calculated"
+        />
 
-          <label className="flex flex-col">
-            <span className="small muted">Expires (auto)</span>
-            <input type="date" value={expiresPreview} readOnly title="Calculated from vaccine type + date" />
-          </label>
-        </div>
+        {/* File */}
+        <input
+          type="file"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          style={{ marginTop: 8 }}
+        />
 
-        <div className="grid" style={{ marginTop: 12, gridTemplateColumns: "1fr 1fr" }}>
-          <label className="flex flex-col">
-            <span className="small muted">Notes (optional)</span>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any notes…" />
-          </label>
-
-          <label className="flex flex-col">
-            <span className="small muted">Upload record (optional)</span>
-            <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-          </label>
-        </div>
-
-        <div style={{ marginTop: 12 }}>
-          <button onClick={onAdd} disabled={saving || !petId} className="btn">
+        {/* Add */}
+        <div style={{ display: "grid", placeItems: "center", marginTop: 12 }}>
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={saving}
+            style={{
+              borderRadius: 0, border: "1px solid #000",
+              background: "#000", color: "#e906d3", fontWeight: 700, padding: "8px 14px",
+              minWidth: 110
+            }}
+          >
             {saving ? "Saving…" : "Add"}
           </button>
         </div>
       </div>
 
-      {/* List */}
-      <div className="panel">
-        <h3 style={{ marginBottom: 8 }}>Records</h3>
-        {loading && <div className="muted small">Loading…</div>}
-        {!loading && records.length === 0 && <div className="muted small">No vaccine records yet.</div>}
-
-        {!loading && records.length > 0 && (
-          <ul className="clean">
-            {records.map((rx, i) => {
-              const st = statusMeta(rx.expires_on);
+      {/* Records card */}
+      <div className="card" style={{ padding: 12, maxWidth: 460, marginInline: "auto" }}>
+        <div style={{ fontWeight: 700, marginBottom: 6 }}>Records</div>
+        {loading ? (
+          <div>Loading…</div>
+        ) : rows.length === 0 ? (
+          <div style={{ opacity: 0.85 }}>No vaccine records</div>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 8 }}>
+            {rows.map((r) => {
+              const url = API.getPublicUrl(r.file_path);
               return (
-                <li key={rx.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: i ? "1px solid var(--border)" : "0" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ fontWeight: 600 }} className="truncate">{rx.title ?? "Other"}</div>
-                      <span className={st.cls}>{st.label}</span>
+                <li key={r.id} className="card" style={{ padding: 10, border: "1px solid #e6e6e6", borderRadius: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{r.vaccine ?? r.title}</div>
+                      <div style={{ fontSize: 13, opacity: 0.9 }}>
+                        {formatMDY(r.given_on)} {r.expires_on ? `• Expires ${formatMDY(r.expires_on)}` : ""}
+                      </div>
                     </div>
-                    <div className="small muted">
-                      Given: {fmtDate(rx.given_on)} • Expires: {fmtDate(rx.expires_on)}
-                      {rx.notes ? ` — ${rx.notes}` : ""}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        type="button"
+                        disabled={!url}
+                        onClick={() => url && window.open(url, "_blank", "noopener")}
+                        style={{
+                          borderRadius: 0, border: "1px solid #000",
+                          background: "#000", color: "#e906d3", fontWeight: 700, padding: "6px 10px", minWidth: 70
+                        }}
+                        title={url ? "Open attachment" : "No file"}
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(r.id)}
+                        style={{ borderRadius: 0, border: "1px solid #000", background: "#fff", color: "#000", fontWeight: 700, padding: "6px 10px", minWidth: 70 }}
+                      >
+                        Delete
+                      </button>
                     </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: 8 }}>
-                    {rx.file_path ? (
-                      <button type="button" onClick={() => onView(rx.file_path)} className="btn btn-outline">View</button>
-                    ) : null}
-                    <button type="button" onClick={() => onDelete(rx)} className="btn btn-danger">Delete</button>
                   </div>
                 </li>
               );
@@ -222,4 +238,15 @@ export default function VaccineRecords() {
       </div>
     </div>
   );
+}
+
+function formatMDY(ymd) {
+  if (!ymd) return "";
+  // Accept Date, ISO, or yyyy-mm-dd
+  const d = typeof ymd === "string" ? new Date(ymd) : new Date(ymd?.toString?.() ?? ymd);
+  if (Number.isNaN(d.getTime())) return "";
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const y = d.getFullYear();
+  return `${m}/${day}/${y}`;
 }
