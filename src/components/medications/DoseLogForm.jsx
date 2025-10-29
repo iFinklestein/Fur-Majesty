@@ -4,12 +4,35 @@ import PropTypes from "prop-types";
 import { listPets } from "@/api/entities";
 import { Meds, DoseLog } from "@/api/medications";
 
+/* ----------------------------- time helpers ----------------------------- */
+// Format a Date -> "YYYY-MM-DDTHH:mm" in LOCAL time for <input type="datetime-local">
+function toLocalInputValue(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  const pad = (n) => String(n).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
+
+// Parse "YYYY-MM-DDTHH:mm" (local) -> Date (local)
+function fromLocalInputValue(v) {
+  if (!v || typeof v !== "string") return new Date();
+  const [datePart, timePart] = v.split("T");
+  const [y, m, d] = datePart.split("-").map((n) => parseInt(n, 10));
+  const [hh, mm] = (timePart || "00:00").split(":").map((n) => parseInt(n, 10));
+  // Construct a LOCAL date (no implicit TZ conversion)
+  return new Date(y, (m ?? 1) - 1, d ?? 1, hh ?? 0, mm ?? 0, 0, 0);
+}
+
 export default function DoseLogForm({ onSaved, onCancel }) {
   const [pets, setPets] = useState([]);
   const [petId, setPetId] = useState("");
   const [meds, setMeds] = useState([]);
   const [medicationId, setMedicationId] = useState("");
-  const [givenAt, setGivenAt] = useState(() => new Date().toISOString().slice(0, 16));
+  const [givenAt, setGivenAt] = useState(() => toLocalInputValue(new Date())); // ✅ local
   const [amount, setAmount] = useState("1");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -36,7 +59,7 @@ export default function DoseLogForm({ onSaved, onCancel }) {
       const { petId: p, medicationId: m } = e.detail || {};
       if (p) setPetId(p);
       if (m) setMedicationId(m);
-      setGivenAt(new Date().toISOString().slice(0, 16));
+      setGivenAt(toLocalInputValue(new Date())); // ✅ local reset
     }
     window.addEventListener("dose-intent", handle);
     return () => window.removeEventListener("dose-intent", handle);
@@ -50,10 +73,13 @@ export default function DoseLogForm({ onSaved, onCancel }) {
     if (!petId || !medicationId) { alert("Pet and medication are required."); return; }
     setSaving(true);
     try {
+      // Convert LOCAL input to an ISO string (UTC) for storage in timestamptz
+      const iso = fromLocalInputValue(givenAt).toISOString();
+
       await DoseLog.add({
         petId,
         medicationId,
-        givenAt: new Date(givenAt).toISOString(),
+        givenAt: iso,
         amount: amount || null,
         notes,
       });
@@ -101,7 +127,7 @@ export default function DoseLogForm({ onSaved, onCancel }) {
           <span className="text-sm text-gray-600">Given at</span>
           <input
             type="datetime-local"
-            value={givenAt}
+            value={givenAt}                         // ✅ true local value
             onChange={(e) => setGivenAt(e.target.value)}
             className="rounded border px-2 py-1"
           />

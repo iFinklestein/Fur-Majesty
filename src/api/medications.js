@@ -66,6 +66,16 @@ export const Meds = {
 /* -----------------------------------------------------------
  * Dose Logs CRUD
  * --------------------------------------------------------- */
+async function getOwnerIdForPet(petId) {
+  const { data, error } = await supabase
+    .from("pets")
+    .select("owner_id")
+    .eq("id", petId)
+    .single();
+  if (error) throw error;
+  return data?.owner_id;
+}
+
 export const MedDoseLog = {
   async list({ petId, medicationId }) {
     const q = supabase
@@ -82,18 +92,29 @@ export const MedDoseLog = {
   },
 
   async add({ petId, medicationId, givenAt, amount, notes }) {
+    // 🔐 Ensure required owner_id is set from the pet
+    const owner_id = await getOwnerIdForPet(petId);
+
+    // Optional: also stamp user_id (nullable in your schema)
+    const { data: userWrap } = await supabase.auth.getUser();
+    const user_id = userWrap?.user?.id ?? null;
+
     const payload = {
+      owner_id,                // <-- required NOT NULL
+      user_id,                 // <-- optional (schema allows NULL)
       pet_id:        petId,
       medication_id: medicationId,
-      given_at:      givenAt, // ISO string
+      given_at:      givenAt,  // ISO string
       amount:        amount || null,
       notes:         notes  || null,
     };
+
     const { data, error } = await supabase
       .from("med_dose_logs")
       .insert(payload)
       .select()
       .single();
+
     if (error) throw error;
     return data;
   },

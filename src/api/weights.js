@@ -3,6 +3,10 @@ import { supabase } from "@/lib/supabaseClient";
 
 /** Local YYYY-MM-DD (no timezone shift) */
 function toLocalISODate(d) {
+  // If it's already an ISO date-only string, do NOT parse with Date()
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    return d;
+  }
   const dt = d instanceof Date ? d : new Date(d);
   const y = dt.getFullYear();
   const m = String(dt.getMonth() + 1).padStart(2, "0");
@@ -39,13 +43,14 @@ export async function addWeight({ petId, date, lbs, unit, notes = "" }) {
   if (userErr) throw userErr;
   const owner_id = userData?.user?.id;
 
+  // IMPORTANT: do not shift days when user provided "YYYY-MM-DD"
   const isoDate = toLocalISODate(date || new Date());
 
   // First try inserting with unit (if provided)
   let payload = {
     owner_id,
     pet_id: petId,
-    date: isoDate,
+    date: isoDate,            // <- date-only string, no TZ issues
     lbs: Number(lbs),
     notes: notes || "",
   };

@@ -52,6 +52,7 @@ export default function WeightPage() {
 
     try {
       setSaving(true);
+      // Pass the date string directly ("YYYY-MM-DD") — no Date() conversion
       await addWeight({ petId, date, lbs: Number(lbs), unit, notes });
       setLbs("");
       setNotes("");
@@ -98,7 +99,7 @@ export default function WeightPage() {
         <input
           type="date"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={(e) => setDate(e.target.value)} // keep raw "YYYY-MM-DD"
           style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #ddd", marginBottom: 12 }}
         />
 
@@ -146,7 +147,7 @@ export default function WeightPage() {
               background: "#000",
               color: "#e906d3",
               fontWeight: 700,
-              borderRadius: 0,         // square corners like your buttons
+              borderRadius: 0,
               cursor: "pointer",
             }}
           >
