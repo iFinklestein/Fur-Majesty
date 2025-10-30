@@ -19,7 +19,7 @@ function to12h(time) {
   const hr12 = ((hour + 11) % 12) + 1;
   return `${hr12}:${String(minute).padStart(2, "0")} ${ampm}`;
 }
-/* inline chevron so it always renders */
+/* inline chevron (matches Dose History) */
 const CHEV_BG =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>\")";
 const chevStyle = (rot180 = false) => ({
@@ -27,6 +27,17 @@ const chevStyle = (rot180 = false) => ({
   backgroundSize: "18px 18px", transform: rot180 ? "rotate(180deg)" : "none",
   transition: "transform 160ms ease", flex: "0 0 18px",
 });
+/* select style with large chevron */
+const SELECT_STYLE = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  MozAppearance: "none",
+  backgroundImage: CHEV_BG,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 10px center",
+  backgroundSize: "18px 18px",
+  paddingRight: 34,
+};
 
 export default function Medications() {
   const [pets, setPets] = useState([]);
@@ -144,12 +155,13 @@ export default function Medications() {
 
   return (
     <div className="page" style={{ paddingTop: 8 }}>
-      {/* Pet selector */}
+      {/* Pet selector (large chevron) */}
       <div className="card" style={{ padding: 10, marginBottom: 12 }}>
         <select
           value={petId}
           onChange={(e) => setPetId(e.target.value)}
-          className="rounded border px-3 py-2 w-full select-chevron"
+          className="rounded border px-3 py-2 w-full"
+          style={SELECT_STYLE}
         >
           {petOptions.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -165,7 +177,8 @@ export default function Medications() {
             <button
               type="button"
               onClick={openAddMeds}
-              style={{ borderRadius: 0, border: "1px solid #000", background: "#000", color: "var(--accent)", fontWeight: 700, padding: "8px 14px" }}
+              className="btn"
+              style={{ minWidth: 120 }}
             >
               Add Meds
             </button>
@@ -180,8 +193,8 @@ export default function Medications() {
 
               return (
                 <div className="card" style={{ border: "1px solid #e6e6e6", borderRadius: 14, padding: 12, background: "#fff" }}>
-                  {/* Name */}
-                  <div style={{ textAlign: "center", fontWeight: 700, marginBottom: 6 }}>
+                  {/* Name (weight 500) */}
+                  <div style={{ textAlign: "center", fontWeight: 500, marginBottom: 6 }}>
                     {m.name || ""}
                   </div>
 
@@ -196,15 +209,21 @@ export default function Medications() {
                     </div>
                   </div>
 
-                  {/* Buttons */}
+                  {/* Buttons (brand; same size) */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
-                    <button type="button" onClick={() => openLogDose(m.id)}
-                      style={{ borderRadius: 0, border: "1px solid #000", background: "#000", color: "var(--accent)", fontWeight: 700, padding: "8px 10px" }}>
-                      + Log Dose
+                    <button
+                      type="button"
+                      onClick={() => openLogDose(m.id)}
+                      className="btn"
+                    >
+                      Log Dose
                     </button>
-                    <button type="button" onClick={openEditMeds}
-                      style={{ borderRadius: 0, border: "1px solid #000", background: "#fff", color: "#000", fontWeight: 700, padding: "8px 10px" }}>
-                      Edit Meds
+                    <button
+                      type="button"
+                      onClick={openEditMeds}
+                      className="btn"
+                    >
+                      Edit
                     </button>
                   </div>
 
@@ -241,10 +260,8 @@ export default function Medications() {
                               type="button"
                               onClick={() => deleteLog(m.id, d.id)}
                               title="Delete dose"
-                              style={{
-                                borderRadius: 0, border: "1px solid #000", background: "#fff",
-                                color: "#000", fontWeight: 700, padding: "4px 8px"
-                              }}
+                              className="btn"
+                              style={{ padding: "4px 8px" }}
                             >
                               Delete
                             </button>

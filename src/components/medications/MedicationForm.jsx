@@ -4,6 +4,20 @@ import PropTypes from "prop-types";
 import { listPets } from "@/api/entities";
 import { Meds, FREQUENCIES } from "@/api/medications";
 
+/* Large chevron (matches Dose History) */
+const CHEV_BG =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>\")";
+const SELECT_STYLE = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  MozAppearance: "none",
+  backgroundImage: CHEV_BG,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 10px center",
+  backgroundSize: "18px 18px",
+  paddingRight: 34,
+};
+
 export default function MedicationForm({ onSaved, onCancel }) {
   const [pets, setPets] = useState([]);
   const [petId, setPetId] = useState("");
@@ -40,7 +54,7 @@ export default function MedicationForm({ onSaved, onCancel }) {
         name,
         dosage,
         frequency,
-        time_of_day: timeOfDay,
+        timeOfDay, // NOTE: matches Meds.add: maps to time_of_day internally in API
         notes,
       });
       setName(""); setDosage(""); setTimeOfDay(""); setFrequency("daily"); setNotes("");
@@ -62,6 +76,7 @@ export default function MedicationForm({ onSaved, onCancel }) {
             value={petId}
             onChange={(e) => setPetId(e.target.value)}
             className="rounded border px-2 py-1"
+            style={SELECT_STYLE}
           >
             {petOptions.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -103,6 +118,7 @@ export default function MedicationForm({ onSaved, onCancel }) {
             value={frequency}
             onChange={(e) => setFrequency(e.target.value)}
             className="rounded border px-2 py-1"
+            style={SELECT_STYLE}
           >
             {FREQUENCIES.map((f) => (
               <option key={f.value} value={f.value}>{f.label}</option>
@@ -120,14 +136,12 @@ export default function MedicationForm({ onSaved, onCancel }) {
           />
         </label>
 
-        <div className="flex gap-2">
+        <div className="flex" style={{ gap: 10 }}>
           <button
             type="submit"
             disabled={saving}
-            style={{
-              borderRadius: 0, border: "1px solid #000", background: "#000",
-              color: "var(--accent)", fontWeight: 700, padding: "8px 12px"
-            }}
+            className="btn"
+            style={{ minWidth: 110 }}
           >
             {saving ? "Saving…" : "Add"}
           </button>
@@ -135,10 +149,8 @@ export default function MedicationForm({ onSaved, onCancel }) {
             <button
               type="button"
               onClick={onCancel}
-              style={{
-                borderRadius: 0, border: "1px solid #000", background: "#fff",
-                color: "#000", fontWeight: 700, padding: "8px 12px"
-              }}
+              className="btn"
+              style={{ background: "#fff", color: "#000", border: "1px solid #000", minWidth: 110 }}
             >
               Cancel
             </button>

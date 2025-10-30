@@ -4,35 +4,26 @@ import PropTypes from "prop-types";
 import { listPets } from "@/api/entities";
 import { Meds, DoseLog } from "@/api/medications";
 
-/* ----------------------------- time helpers ----------------------------- */
-// Format a Date -> "YYYY-MM-DDTHH:mm" in LOCAL time for <input type="datetime-local">
-function toLocalInputValue(date) {
-  const d = date instanceof Date ? date : new Date(date);
-  const pad = (n) => String(n).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mi = pad(d.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-}
-
-// Parse "YYYY-MM-DDTHH:mm" (local) -> Date (local)
-function fromLocalInputValue(v) {
-  if (!v || typeof v !== "string") return new Date();
-  const [datePart, timePart] = v.split("T");
-  const [y, m, d] = datePart.split("-").map((n) => parseInt(n, 10));
-  const [hh, mm] = (timePart || "00:00").split(":").map((n) => parseInt(n, 10));
-  // Construct a LOCAL date (no implicit TZ conversion)
-  return new Date(y, (m ?? 1) - 1, d ?? 1, hh ?? 0, mm ?? 0, 0, 0);
-}
+/* large chevron for selects */
+const CHEV_BG =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>\")";
+const SELECT_STYLE = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  MozAppearance: "none",
+  backgroundImage: CHEV_BG,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 10px center",
+  backgroundSize: "18px 18px",
+  paddingRight: 34,
+};
 
 export default function DoseLogForm({ onSaved, onCancel }) {
   const [pets, setPets] = useState([]);
   const [petId, setPetId] = useState("");
   const [meds, setMeds] = useState([]);
   const [medicationId, setMedicationId] = useState("");
-  const [givenAt, setGivenAt] = useState(() => toLocalInputValue(new Date())); // ✅ local
+  const [givenAt, setGivenAt] = useState(() => new Date().toISOString().slice(0, 16));
   const [amount, setAmount] = useState("1");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -59,7 +50,7 @@ export default function DoseLogForm({ onSaved, onCancel }) {
       const { petId: p, medicationId: m } = e.detail || {};
       if (p) setPetId(p);
       if (m) setMedicationId(m);
-      setGivenAt(toLocalInputValue(new Date())); // ✅ local reset
+      setGivenAt(new Date().toISOString().slice(0, 16));
     }
     window.addEventListener("dose-intent", handle);
     return () => window.removeEventListener("dose-intent", handle);
@@ -73,13 +64,10 @@ export default function DoseLogForm({ onSaved, onCancel }) {
     if (!petId || !medicationId) { alert("Pet and medication are required."); return; }
     setSaving(true);
     try {
-      // Convert LOCAL input to an ISO string (UTC) for storage in timestamptz
-      const iso = fromLocalInputValue(givenAt).toISOString();
-
       await DoseLog.add({
         petId,
         medicationId,
-        givenAt: iso,
+        givenAt: new Date(givenAt).toISOString(),
         amount: amount || null,
         notes,
       });
@@ -102,7 +90,8 @@ export default function DoseLogForm({ onSaved, onCancel }) {
           <select
             value={petId}
             onChange={(e) => setPetId(e.target.value)}
-            className="rounded border px-2 py-1 w-full select-chevron"
+            className="rounded border px-2 py-1 w-full"
+            style={SELECT_STYLE}
           >
             {petOptions.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -115,7 +104,8 @@ export default function DoseLogForm({ onSaved, onCancel }) {
           <select
             value={medicationId}
             onChange={(e) => setMedicationId(e.target.value)}
-            className="rounded border px-2 py-1 w-full select-chevron"
+            className="rounded border px-2 py-1 w-full"
+            style={SELECT_STYLE}
           >
             {medOptions.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -127,7 +117,7 @@ export default function DoseLogForm({ onSaved, onCancel }) {
           <span className="text-sm text-gray-600">Given at</span>
           <input
             type="datetime-local"
-            value={givenAt}                         // ✅ true local value
+            value={givenAt}
             onChange={(e) => setGivenAt(e.target.value)}
             className="rounded border px-2 py-1"
           />
@@ -152,33 +142,21 @@ export default function DoseLogForm({ onSaved, onCancel }) {
           />
         </label>
 
-        <div className="flex gap-2">
+        <div style={{ display: "flex", gap: 10 }}>
           <button
             type="submit"
             disabled={saving}
-            style={{
-              borderRadius: 0,
-              border: "1px solid #000",
-              background: "#000",
-              color: "var(--accent)",
-              fontWeight: 700,
-              padding: "8px 12px",
-            }}
+            className="btn"
+            style={{ minWidth: 110 }}
           >
-            {saving ? "Saving..." : "Log Dose"}
+            {saving ? "Saving..." : "Add"}
           </button>
           {onCancel && (
             <button
               type="button"
               onClick={onCancel}
-              style={{
-                borderRadius: 0,
-                border: "1px solid #000",
-                background: "#fff",
-                color: "#000",
-                fontWeight: 700,
-                padding: "8px 12px",
-              }}
+              className="btn"
+              style={{ background: "#fff", color: "#000", border: "1px solid #000", minWidth: 110 }}
             >
               Cancel
             </button>
