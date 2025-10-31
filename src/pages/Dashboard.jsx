@@ -1,30 +1,58 @@
-// src/pages/Dashboard.jsx
-import { useCallback, useEffect, useState } from "react";
+// FILE: src/pages/Dashboard.jsx
+import PropTypes from "prop-types";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import AddPetForm from "../components/pets/AddPetForm";
 import PetCarousel from "../components/PetCarousel";
 import { getPublicUrl } from "@/api/integrations";
 
-/* ---------- inline chevron (IDENTICAL to Medications) ---------- */
+/* Inline down-chevron SVG (matches Dose History; 18px) */
 const CHEV_BG =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>\")";
-const chevStyle = (rot180 = false) => ({
-  width: 18,
-  height: 18,
-  backgroundImage: CHEV_BG,
-  backgroundRepeat: "no-repeat",
-  backgroundSize: "18px 18px",
-  transform: rot180 ? "rotate(180deg)" : "none",
-  transition: "transform 160ms ease",
-  flex: "0 0 18px",
-});
+
+/** Header row for the <summary>, independent of global styles */
+function SummaryHeader({ open, label = "Add Pet" }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 8,
+        cursor: "pointer",
+        userSelect: "none",
+        paddingRight: 4,
+      }}
+    >
+      {/* normal weight to avoid the bold regression */}
+      <span style={{ fontWeight: 400 }}>{label}</span>
+      <span
+        aria-hidden
+        style={{
+          width: 18,
+          height: 18,
+          backgroundImage: CHEV_BG,
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "18px 18px",
+          transform: open ? "rotate(180deg)" : "none",
+          transition: "transform 160ms ease",
+          flex: "0 0 18px",
+        }}
+      />
+    </div>
+  );
+}
+SummaryHeader.propTypes = {
+  open: PropTypes.bool,
+  label: PropTypes.string,
+};
 
 export default function Dashboard() {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Add Pet disclosure state (to match Meds header + chevron behavior)
-  const [showAdd, setShowAdd] = useState(false);
+  const addPetDetailsRef = useRef(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   const loadPets = useCallback(async () => {
     setLoading(true);
@@ -52,11 +80,13 @@ export default function Dashboard() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadPets();
-  }, [loadPets]);
+  useEffect(() => { loadPets(); }, [loadPets]);
 
   const handlePetCreated = () => loadPets();
+  const handleCancelAddPet = () => {
+    if (addPetDetailsRef.current) addPetDetailsRef.current.open = false;
+    setAddOpen(false);
+  };
 
   const deletePet = async (id) => {
     await supabase.from("pets").delete().eq("id", id);
@@ -65,37 +95,26 @@ export default function Dashboard() {
 
   return (
     <div className="page">
-      {/* Add Pet (header uses SAME chevron as Medications) */}
-      <div className="card" style={{ padding: 12 }}>
-        <div
-          role="button"
-          onClick={() => setShowAdd((v) => !v)}
-          aria-expanded={showAdd}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-            cursor: "pointer",
-            userSelect: "none",
-            paddingRight: 2,
-          }}
+      {/* Add Pet */}
+      <div className="card">
+        <details
+          ref={addPetDetailsRef}
+          onToggle={(e) => setAddOpen(e.currentTarget.open)}
         >
-          {/* Match your header weight preference (500) */}
-          <span style={{ fontWeight: 500 }}>Add Pet</span>
-          <span style={chevStyle(showAdd)} />
-        </div>
+          {/* No summary-clean class */}
+          <summary style={{ listStyle: "none" }}>
+            <SummaryHeader open={addOpen} label="Add Pet" />
+          </summary>
 
-        {showAdd && (
-          <div style={{ marginTop: 10 }}>
-            <AddPetForm onCreated={handlePetCreated} />
+          <div style={{ marginTop: 8 }}>
+            <AddPetForm onCreated={handlePetCreated} onCancel={handleCancelAddPet} />
           </div>
-        )}
+        </details>
       </div>
 
       {/* My Pets */}
       <div className="card" style={{ paddingTop: 8 }}>
-        <h2 style={{ marginBottom: 8, fontWeight: 500 }}>My Pets</h2>
+        <h2 style={{ marginBottom: 8, fontWeight: 500}}>My Pets</h2>
 
         {loading && <p>Loading pets…</p>}
         {!loading && pets.length === 0 && <p>No pets yet.</p>}
@@ -148,11 +167,8 @@ export default function Dashboard() {
                         alignItems: "center",
                       }}
                     >
-                      {/* Pet name weight 500 to match your non-bold directive */}
                       <div style={{ fontWeight: 500 }}>{pet.name}</div>
-                      <button className="btn" onClick={() => deletePet(pet.id)}>
-                        Delete
-                      </button>
+                      <button onClick={() => deletePet(pet.id)}>Delete</button>
                     </div>
 
                     <div className="small" style={{ marginTop: 8 }}>
@@ -173,10 +189,6 @@ export default function Dashboard() {
   );
 }
 
-/**
- * Format a YYYY-MM-DD string to MM/DD/YYYY without timezone conversion.
- * If the input isn't in that shape, we fall back to the raw value.
- */
 function formatDateYmdToUs(ymd) {
   if (typeof ymd !== "string") return String(ymd ?? "");
   const m = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);

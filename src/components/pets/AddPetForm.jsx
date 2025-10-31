@@ -1,9 +1,14 @@
-import { useState } from "react";
+// FILE: src/components/pets/AddPetForm.jsx
+import { useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { User, Pet } from "@/api/entities";
 import { UploadFile } from "@/api/integrations";
 
-export default function AddPetForm({ onCreated }) {
+const BRAND_MAGENTA = "#e906d3";
+
+export default function AddPetForm({ onCreated, onCancel }) {
+  const formRef = useRef(null);
+
   const [name, setName] = useState("");
   const [species, setSpecies] = useState("");
   const [breed, setBreed] = useState("");
@@ -20,6 +25,22 @@ export default function AddPetForm({ onCreated }) {
     setPreview(f ? URL.createObjectURL(f) : "");
   };
 
+  const resetForm = () => {
+    setName(""); setSpecies(""); setBreed(""); setSex(""); setDob("");
+    setPhotoFile(null); setPreview(""); setMsg("");
+  };
+
+  const closeNearestDetails = () => {
+    let el = formRef.current;
+    while (el && el !== document.body) {
+      if (el.tagName === "DETAILS") {
+        el.open = false;
+        break;
+      }
+      el = el.parentElement;
+    }
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !species.trim()) {
@@ -33,7 +54,6 @@ export default function AddPetForm({ onCreated }) {
       const user = await User.me();
       if (!user) throw new Error("Not authenticated");
 
-      // 1) Create pet (entities.create writes both user_id & owner_id)
       const pet = await Pet.create({
         name: name.trim(),
         species: species.trim(),
@@ -42,7 +62,6 @@ export default function AddPetForm({ onCreated }) {
         dob: dob || null,
       });
 
-      // 2) Optional photo upload
       if (photoFile) {
         const ext = (photoFile.name?.split(".").pop() || "jpg").toLowerCase();
         const filename = `${cryptoRandom()}-${Date.now()}.${ext}`;
@@ -56,15 +75,12 @@ export default function AddPetForm({ onCreated }) {
           upsert: false,
         });
 
-        // Persist path on the pet
         await Pet.update(pet.id, { photo_path: path });
       }
 
-      // Reset form
-      setName(""); setSpecies(""); setBreed(""); setSex(""); setDob("");
-      setPhotoFile(null); setPreview("");
-
+      resetForm();
       onCreated?.();
+      closeNearestDetails();
     } catch (err) {
       setMsg(String(err.message || err));
     } finally {
@@ -72,8 +88,31 @@ export default function AddPetForm({ onCreated }) {
     }
   };
 
+  const handleCancel = () => {
+    resetForm();
+    closeNearestDetails();
+    onCancel?.();
+  };
+
+  const btnPrimary = {
+    borderRadius: 0,
+    border: "1px solid #000",
+    background: "#000",
+    color: BRAND_MAGENTA,
+    fontWeight: 700,
+    padding: "8px 12px",
+  };
+  const btnOutline = {
+    borderRadius: 0,
+    border: "1px solid #000",
+    background: "#fff",
+    color: "#000",
+    fontWeight: 700,
+    padding: "8px 12px",
+  };
+
   return (
-    <form onSubmit={submit} className="grid" data-medication-form>
+    <form ref={formRef} onSubmit={submit} className="grid">
       <input
         type="text"
         placeholder="Name"
@@ -108,7 +147,9 @@ export default function AddPetForm({ onCreated }) {
       />
 
       <div style={{ margin: "6px 0" }}>
-        <label htmlFor="pet-photo" style={{ display: "block", marginBottom: 6 }}>Photo (optional)</label>
+        <label htmlFor="pet-photo" style={{ display: "block", marginBottom: 6 }}>
+          Photo (optional)
+        </label>
         <input id="pet-photo" type="file" accept="image/*" onChange={onFile} />
         {preview ? (
           <img
@@ -119,21 +160,25 @@ export default function AddPetForm({ onCreated }) {
         ) : null}
       </div>
 
-      <div>
-        <button type="submit" disabled={busy} className="btn">
+      <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+        <button type="submit" disabled={busy} style={btnPrimary}>
           {busy ? "Saving…" : "Add"}
         </button>
+        <button type="button" onClick={handleCancel} style={btnOutline}>
+          Cancel
+        </button>
       </div>
-      {msg && <div style={{ color: "crimson" }}>{msg}</div>}
+
+      {msg && <div style={{ color: "crimson", marginTop: 8 }}>{msg}</div>}
     </form>
   );
 }
 
 AddPetForm.propTypes = {
   onCreated: PropTypes.func,
+  onCancel: PropTypes.func,
 };
 
-// Simple filename nonce
 function cryptoRandom() {
   const arr = new Uint32Array(4);
   (typeof crypto !== "undefined" && crypto.getRandomValues)
