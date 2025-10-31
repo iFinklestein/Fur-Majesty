@@ -81,7 +81,7 @@ export default function VaccineRecords() {
       await API.add({
         pet_id: cleanPetId,
         vaccine,
-        given_on: givenOn,           // ISO yyyy-mm-dd
+        given_on: givenOn,             // ISO yyyy-mm-dd
         expires_on: expiresOn || null, // ISO yyyy-mm-dd
         file,
       });
@@ -111,76 +111,92 @@ export default function VaccineRecords() {
       {/* Form card */}
       <div className="card" style={{ padding: 12, marginBottom: 12, maxWidth: 460, marginInline: "auto" }}>
         {/* Pet */}
-        <select
-          value={petId}
-          onChange={(e) => setPetId(e.target.value)}
-          className="rounded border px-3 py-2 w-full"
-          style={{
-            WebkitAppearance: "none", appearance: "none",
-            backgroundImage: CHEV_BG, backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 10px center", backgroundSize: "18px 18px",
-          }}
-        >
-          <option value="" disabled>Pet</option>
-          {petOptions.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+        <label className="flex flex-col" style={{ marginBottom: 8 }}>
+          <span className="text-sm text-gray-600">Pet</span>
+          <select
+            value={petId}
+            onChange={(e) => setPetId(e.target.value)}
+            className="rounded border px-3 py-2 w-full"
+            style={{
+              WebkitAppearance: "none", appearance: "none",
+              backgroundImage: CHEV_BG, backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 10px center", backgroundSize: "18px 18px",
+            }}
+          >
+            <option value="" disabled>Choose a pet…</option>
+            {petOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </label>
 
         {/* Vaccine */}
-        <select
-          value={vaccine}
-          onChange={(e) => setVaccine(e.target.value)}
-          className="rounded border px-3 py-2 w-full"
-          style={{
-            marginTop: 8, WebkitAppearance: "none", appearance: "none",
-            backgroundImage: CHEV_BG, backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 10px center", backgroundSize: "18px 18px",
-          }}
-        >
-          <option value="" disabled>Vaccine</option>
-          {COMMON_VACCINES.map((v) => <option key={v} value={v}>{v}</option>)}
-        </select>
+        <label className="flex flex-col" style={{ marginBottom: 8 }}>
+          <span className="text-sm text-gray-600">Vaccine</span>
+          <select
+            value={vaccine}
+            onChange={(e) => setVaccine(e.target.value)}
+            className="rounded border px-3 py-2 w-full"
+            style={{
+              WebkitAppearance: "none", appearance: "none",
+              backgroundImage: CHEV_BG, backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 10px center", backgroundSize: "18px 18px",
+            }}
+          >
+            <option value="" disabled>Choose a vaccine…</option>
+            {COMMON_VACCINES.map((v) => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </label>
 
         {/* Date (given) */}
-        <input
-          type="date"
-          value={givenOn}
-          onChange={(e) => setGivenOn(e.target.value)}
-          className="rounded border px-3 py-2 w-full"
-          style={{ marginTop: 8 }}
-          placeholder="Date"
-        />
+        <label className="flex flex-col" style={{ marginBottom: 8 }}>
+          <span className="text-sm text-gray-600">Date given</span>
+          <input
+            type="date"
+            value={givenOn}
+            onChange={(e) => setGivenOn(e.target.value)}
+            className="rounded border px-3 py-2 w-full"
+            placeholder="yyyy-mm-dd"
+          />
+        </label>
 
         {/* Expires (Auto calculated) — display MM/DD/YYYY */}
-        <input
-          type="text"
-          value={formatMDY(expiresOn)}
-          readOnly
-          className="rounded border px-3 py-2 w-full"
-          style={{ marginTop: 8, background: "#f7f7f7", color: "#555" }}
-          placeholder="Expires (Auto calculated)"
-          aria-label="Expires (Auto calculated)"
-          title="Auto-calculated"
-        />
+        <label className="flex flex-col" style={{ marginBottom: 8 }}>
+          <span className="text-sm text-gray-600">Expires (auto)</span>
+          <input
+            type="text"
+            value={formatMDY(expiresOn)}
+            readOnly
+            className="rounded border px-3 py-2 w-full"
+            style={{ background: "#f7f7f7", color: "#555" }}
+            aria-label="Expires (auto-calculated)"
+            title="Auto-calculated"
+          />
+        </label>
 
         {/* File */}
-        <input
-          type="file"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-          style={{ marginTop: 8 }}
-        />
+        <label className="flex flex-col" style={{ marginBottom: 4 }}>
+          <span className="text-sm text-gray-600">Attachment (optional)</span>
+          <input
+            type="file"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+          />
+        </label>
 
         {/* Add */}
-        <div style={{ display: "grid", placeItems: "center", marginTop: 12 }}>
+        <div style={{ display: "grid", placeItems: "center", marginTop: 8 }}>
           <button
             type="button"
             onClick={handleAdd}
             disabled={saving}
             style={{
-              borderRadius: 0, border: "1px solid #000",
-              background: "#000", color: "#e906d3", fontWeight: 700, padding: "8px 14px",
-              minWidth: 110
+              borderRadius: 0,
+              border: "1px solid #000",
+              background: "#000",
+              color: "#e906d3",
+              fontWeight: 700,
+              padding: "6px 10px",
+              minWidth: 70,                 // match "View" button
             }}
           >
             {saving ? "Saving…" : "Add"}
@@ -190,7 +206,9 @@ export default function VaccineRecords() {
 
       {/* Records card */}
       <div className="card" style={{ padding: 12, maxWidth: 460, marginInline: "auto" }}>
-        <div style={{ fontWeight: 700, marginBottom: 6 }}>Records</div>
+        {/* Unbolded section title */}
+        <div style={{ fontWeight: 400, marginBottom: 6 }}>Records</div>
+
         {loading ? (
           <div>Loading…</div>
         ) : rows.length === 0 ? (
@@ -203,7 +221,8 @@ export default function VaccineRecords() {
                 <li key={r.id} className="card" style={{ padding: 10, border: "1px solid #e6e6e6", borderRadius: 12 }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}>
                     <div>
-                      <div style={{ fontWeight: 700 }}>{r.vaccine ?? r.title}</div>
+                      {/* Vaccine name NOT bold */}
+                      <div style={{ fontWeight: 400 }}>{r.vaccine ?? r.title}</div>
                       <div style={{ fontSize: 13, opacity: 0.9 }}>
                         {formatMDY(r.given_on)} {r.expires_on ? `• Expires ${formatMDY(r.expires_on)}` : ""}
                       </div>
@@ -215,7 +234,8 @@ export default function VaccineRecords() {
                         onClick={() => url && window.open(url, "_blank", "noopener")}
                         style={{
                           borderRadius: 0, border: "1px solid #000",
-                          background: "#000", color: "#e906d3", fontWeight: 700, padding: "6px 10px", minWidth: 70
+                          background: "#000", color: "#e906d3",
+                          fontWeight: 700, padding: "6px 10px", minWidth: 70
                         }}
                         title={url ? "Open attachment" : "No file"}
                       >
@@ -224,7 +244,16 @@ export default function VaccineRecords() {
                       <button
                         type="button"
                         onClick={() => handleDelete(r.id)}
-                        style={{ borderRadius: 0, border: "1px solid #000", background: "#fff", color: "#000", fontWeight: 700, padding: "6px 10px", minWidth: 70 }}
+                        // Brand-styled Delete (matches global buttons)
+                        style={{
+                          borderRadius: 0,
+                          border: "1px solid #000",
+                          background: "#000",
+                          color: "#e906d3",
+                          fontWeight: 700,
+                          padding: "6px 10px",
+                          minWidth: 70
+                        }}
                       >
                         Delete
                       </button>
