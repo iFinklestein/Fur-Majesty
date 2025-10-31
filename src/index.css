@@ -232,3 +232,17 @@ details[open] > summary.summary-clean::after {
   content: "⌃";
   transform: translateY(-50%);
 }
+
+/* Hamburger lines refinement */
+.burger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.burger-icon span {
+  display: block;
+  width: 26px;          /* narrower than button width */
+  height: 2px;          /* thin line */
+  background: var(--accent);
+}

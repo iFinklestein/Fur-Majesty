@@ -84,7 +84,7 @@ export default function Layout({ children }) {
     authLink: {
       color: "var(--accent, #e906d3)",
       textDecoration: "none",
-      fontWeight: 700,
+      fontWeight: 500,
       padding: "8px 10px",
       borderRadius: 6,
     },
@@ -128,7 +128,7 @@ export default function Layout({ children }) {
       fontWeight: 700,
     }),
     signout: { marginTop: "auto", padding: 14, borderTop: "1px solid var(--border, #e7e7e7)" },
-    signoutLink: { textDecoration: "none", color: "var(--accent, #e906d3)", fontWeight: 700 },
+    signoutLink: { textDecoration: "none", color: "var(--accent, #e906d3)", fontWeight: 500 },
 
     main: {
       padding: "24px 16px",
@@ -159,7 +159,12 @@ export default function Layout({ children }) {
               title="Menu"
             >
               {/* hamburger glyph */}
-              <span aria-hidden>≡</span>
+              <div aria-hidden className="burger-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+
             </button>
           )}
 
