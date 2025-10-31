@@ -1,4 +1,4 @@
-// src/pages/Weight.jsx
+// FILE: src/pages/Weight.jsx
 import { useEffect, useMemo, useState } from "react";
 import { listPets } from "@/api/entities";
 import { listWeightsForPet, addWeight, deleteWeight } from "@/api/weights";
@@ -11,6 +11,10 @@ function todayLocalISO() {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+
+// Large chevron (same vector used elsewhere)
+const CHEV_BG =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>\")";
 
 export default function WeightPage() {
   const [pets, setPets] = useState([]);
@@ -52,11 +56,9 @@ export default function WeightPage() {
 
     try {
       setSaving(true);
-      // Pass the date string directly ("YYYY-MM-DD") — no Date() conversion
       await addWeight({ petId, date, lbs: Number(lbs), unit, notes });
       setLbs("");
       setNotes("");
-      // refresh
       const fresh = await listWeightsForPet(petId);
       setRows(fresh);
     } catch (e) {
@@ -79,15 +81,30 @@ export default function WeightPage() {
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto" }}>
+    <div className="page" style={{ maxWidth: 520, margin: "0 auto" }}>
       {/* FORM CARD */}
-      <div className="card" style={{ padding: 16, borderRadius: 12, boxShadow: "0 2px 10px rgba(0,0,0,.12)" }}>
+      <div className="card" style={{ padding: 16, borderRadius: 12 }}>
         {/* Pet */}
-        <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Pet</label>
+        <label style={{ display: "block", marginBottom: 6 }}>
+          <span className="small muted">Pet</span>
+        </label>
         <select
           value={petId}
           onChange={(e) => setPetId(e.target.value)}
-          style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #ddd", marginBottom: 12 }}
+          className="select-chevron"
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 8,
+            border: "1px solid #ddd",
+            marginBottom: 12,
+            WebkitAppearance: "none",
+            appearance: "none",
+            backgroundImage: CHEV_BG,
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 10px center",
+            backgroundSize: "18px 18px",
+          }}
         >
           {pets.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
@@ -95,16 +112,26 @@ export default function WeightPage() {
         </select>
 
         {/* Date */}
-        <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Date</label>
+        <label style={{ display: "block", marginBottom: 6 }}>
+          <span className="small muted">Date</span>
+        </label>
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)} // keep raw "YYYY-MM-DD"
-          style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #ddd", marginBottom: 12 }}
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 8,
+            border: "1px solid #ddd",
+            marginBottom: 12
+          }}
         />
 
-        {/* Weight (lbs) */}
-        <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Weight</label>
+        {/* Weight (lbs) + Unit */}
+        <label style={{ display: "block", marginBottom: 6 }}>
+          <span className="small muted">Weight</span>
+        </label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 110px", gap: 8, marginBottom: 12 }}>
           <input
             type="number"
@@ -117,7 +144,18 @@ export default function WeightPage() {
           <select
             value={unit}
             onChange={(e) => setUnit(e.target.value)}
-            style={{ padding: "10px 12px", borderRadius: 8, border: "1px solid #ddd" }}
+            className="select-chevron"
+            style={{
+              padding: "10px 12px",
+              borderRadius: 8,
+              border: "1px solid #ddd",
+              WebkitAppearance: "none",
+              appearance: "none",
+              backgroundImage: CHEV_BG,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 10px center",
+              backgroundSize: "18px 18px",
+            }}
           >
             <option value="lb">lb</option>
             <option value="kg">kg</option>
@@ -125,7 +163,9 @@ export default function WeightPage() {
         </div>
 
         {/* Notes */}
-        <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>Notes (optional)</label>
+        <label style={{ display: "block", marginBottom: 6 }}>
+          <span className="small muted">Notes (optional)</span>
+        </label>
         <textarea
           rows={3}
           value={notes}
@@ -134,15 +174,14 @@ export default function WeightPage() {
           style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #ddd", marginBottom: 16 }}
         />
 
-        {/* Add (centered, on-brand) */}
+        {/* Add (centered, on-brand, SHORTER) */}
         <div style={{ display: "flex", justifyContent: "center" }}>
           <button
             type="button"
             onClick={onAdd}
             disabled={saving}
             style={{
-              minWidth: 120,
-              padding: "10px 18px",
+              padding: "8px 12px",            // shorter than before
               border: "1px solid #000",
               background: "#000",
               color: "#e906d3",
@@ -157,8 +196,9 @@ export default function WeightPage() {
       </div>
 
       {/* HISTORY CARD */}
-      <div className="card" style={{ marginTop: 18, padding: 16, borderRadius: 12, boxShadow: "0 2px 10px rgba(0,0,0,.08)" }}>
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>History</div>
+      <div className="card" style={{ marginTop: 18, padding: 16, borderRadius: 12 }}>
+        {/* Not bold */}
+        <div style={{ fontWeight: 400, marginBottom: 10 }}>History</div>
         {loading ? (
           <div>Loading…</div>
         ) : rows.length === 0 ? (
@@ -168,7 +208,8 @@ export default function WeightPage() {
             {rows.map((r) => (
               <li key={r.id} style={{ display: "grid", gridTemplateColumns: "1fr auto", alignItems: "center", gap: 10 }}>
                 <div>
-                  <div style={{ fontWeight: 600 }}>
+                  {/* Date should NOT be bold */}
+                  <div style={{ fontWeight: 400 }}>
                     {new Date(r.date + "T00:00:00").toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" })}
                   </div>
                   <div style={{ color: "#333" }}>
@@ -181,7 +222,7 @@ export default function WeightPage() {
                   type="button"
                   onClick={() => onDelete(r.id)}
                   style={{
-                    padding: "8px 14px",
+                    padding: "6px 10px",
                     border: "1px solid #000",
                     background: "#000",
                     color: "#e906d3",
