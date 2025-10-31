@@ -1,3 +1,5 @@
+// src/pages/VetVisits.jsx
+
 import { useEffect, useMemo, useState } from "react";
 import { listPets, VetVisit } from "@/api/entities";
 
@@ -16,6 +18,10 @@ const btnBase = {
   lineHeight: 1.1,
 };
 const btn = { ...btnBase, textAlign: "center" };
+
+/* Same chevron as Dose History, at 18px */
+const CHEV_BG =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>\")";
 
 /* ================================
    Date helpers
@@ -137,7 +143,19 @@ export default function VetVisits() {
       <form onSubmit={handleAdd} aria-label="Add vet visit" className="panel" style={{ padding: 16 }}>
         <label className="flex flex-col" style={{ marginBottom: 10 }}>
           <span className="small muted">Pet</span>
-          <select value={petId} onChange={(e) => setPetId(e.target.value)}>
+          <select
+            value={petId}
+            onChange={(e) => setPetId(e.target.value)}
+            className="rounded border px-3 py-2 w-full"
+            style={{
+              WebkitAppearance: "none",
+              appearance: "none",
+              backgroundImage: CHEV_BG,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 10px center",
+              backgroundSize: "18px 18px",
+            }}
+          >
             {pets.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -211,7 +229,8 @@ export default function VetVisits() {
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 600 }}>{fmtDisplay(r.visit_date)}</div>
+                    {/* Date no longer bold */}
+                    <div style={{ fontWeight: 400 }}>{fmtDisplay(r.visit_date)}</div>
                     {r.reason ? <div>{r.reason}</div> : null}
                     {r.notes ? (
                       <div className="small muted">{r.notes}</div>
