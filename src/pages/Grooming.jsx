@@ -14,7 +14,10 @@ const GROOMING_TYPES = [
   { value: "teeth_cleaning", label: "Teeth Cleaning" },
 ];
 
-// Local "today" as YYYY-MM-DD (no UTC conversion)
+// Big chevron (matching Dose History)
+const CHEV_BG =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>\")";
+
 function todayLocal() {
   const d = new Date();
   const y = d.getFullYear();
@@ -23,11 +26,10 @@ function todayLocal() {
   return `${y}-${m}-${day}`;
 }
 
-// Render a local date string (YYYY-MM-DD) as MM/DD/YYYY without UTC shift
 function renderUS(dateStr) {
   if (!dateStr) return "";
   const [y, m, d] = dateStr.split("-").map((n) => parseInt(n, 10));
-  const date = new Date(y, (m || 1) - 1, d || 1); // local date
+  const date = new Date(y, (m || 1) - 1, d || 1);
   return date.toLocaleDateString(undefined, {
     year: "numeric",
     month: "2-digit",
@@ -38,14 +40,13 @@ function renderUS(dateStr) {
 export default function Grooming() {
   const [pets, setPets] = useState([]);
   const [petId, setPetId] = useState("");
-  const [date, setDate] = useState(todayLocal());          // <- correct default
+  const [date, setDate] = useState(todayLocal());
   const [groomType, setGroomType] = useState(GROOMING_TYPES[0].value);
 
   const [rows, setRows] = useState([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Load pets
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -61,7 +62,6 @@ export default function Grooming() {
     return () => { alive = false; };
   }, [petId]);
 
-  // Load logs when pet changes
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -90,7 +90,7 @@ export default function Grooming() {
       await addGroomingLog({ pet_id: petId, date, type: groomType });
       const data = await listGroomsForPet(petId);
       setRows(data || []);
-      setDate(todayLocal()); // reset to today (local)
+      setDate(todayLocal());
     } catch (e) {
       alert(e.message ?? "Failed to add grooming log");
     } finally {
@@ -110,7 +110,6 @@ export default function Grooming() {
 
   return (
     <div className="page">
-      {/* Keep hidden title for consistency with your other pages */}
       <h2 style={{ display: "none" }}>Grooming</h2>
 
       {/* Form */}
@@ -121,12 +120,19 @@ export default function Grooming() {
             <select
               value={petId}
               onChange={(e) => setPetId(e.target.value)}
-              style={{ width: "100%" }}
+              className="select-chevron"
+              style={{
+                width: "100%",
+                WebkitAppearance: "none",
+                appearance: "none",
+                backgroundImage: CHEV_BG,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 10px center",
+                backgroundSize: "18px 18px",
+              }}
             >
               {pets.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
+                <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </label>
@@ -146,18 +152,24 @@ export default function Grooming() {
             <select
               value={groomType}
               onChange={(e) => setGroomType(e.target.value)}
-              style={{ width: "100%" }}
+              className="select-chevron"
+              style={{
+                width: "100%",
+                WebkitAppearance: "none",
+                appearance: "none",
+                backgroundImage: CHEV_BG,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 10px center",
+                backgroundSize: "18px 18px",
+              }}
             >
               {GROOMING_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
+                <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
           </label>
         </div>
 
-        {/* Centered Add button (matches other pages) */}
         <div style={{ marginTop: 12, display: "flex", justifyContent: "center" }}>
           <button type="submit" disabled={saving}>
             {saving ? "Saving…" : "Add"}
@@ -165,15 +177,13 @@ export default function Grooming() {
         </div>
       </form>
 
-      {/* Appointments list */}
+      {/* Appointments */}
       <div className="card" style={{ marginTop: 16 }}>
-        <h3 style={{ marginBottom: 8 }}>Appointments</h3>
+        {/* 🚫 remove bold */}
+        <h3 style={{ marginBottom: 8, fontWeight: 400 }}>Appointments</h3>
 
         {loading && <div>Loading…</div>}
-
-        {!loading && rows.length === 0 && (
-          <div>No Grooming appointments</div>
-        )}
+        {!loading && rows.length === 0 && <div>No Grooming appointments</div>}
 
         {!loading && rows.length > 0 && (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
