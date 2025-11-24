@@ -1,4 +1,4 @@
-// FILE: src/pages/Dashboard.jsx
+// src/pages/Dashboard.jsx
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
@@ -24,7 +24,6 @@ function SummaryHeader({ open, label = "Add Pet" }) {
         paddingRight: 4,
       }}
     >
-      {/* normal weight to avoid the bold regression */}
       <span style={{ fontWeight: 400 }}>{label}</span>
       <span
         aria-hidden
@@ -80,7 +79,9 @@ export default function Dashboard() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadPets(); }, [loadPets]);
+  useEffect(() => {
+    loadPets();
+  }, [loadPets]);
 
   const handlePetCreated = () => loadPets();
   const handleCancelAddPet = () => {
@@ -94,27 +95,29 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="page">
+    <div>
       {/* Add Pet */}
       <div className="card">
         <details
           ref={addPetDetailsRef}
           onToggle={(e) => setAddOpen(e.currentTarget.open)}
         >
-          {/* No summary-clean class */}
           <summary style={{ listStyle: "none" }}>
             <SummaryHeader open={addOpen} label="Add Pet" />
           </summary>
 
           <div style={{ marginTop: 8 }}>
-            <AddPetForm onCreated={handlePetCreated} onCancel={handleCancelAddPet} />
+            <AddPetForm
+              onCreated={handlePetCreated}
+              onCancel={handleCancelAddPet}
+            />
           </div>
         </details>
       </div>
 
       {/* My Pets */}
       <div className="card" style={{ paddingTop: 8 }}>
-        <h2 style={{ marginBottom: 8, fontWeight: 500}}>My Pets</h2>
+        <h2 style={{ marginBottom: 8, fontWeight: 500 }}>My Pets</h2>
 
         {loading && <p>Loading pets…</p>}
         {!loading && pets.length === 0 && <p>No pets yet.</p>}
@@ -124,7 +127,9 @@ export default function Dashboard() {
             items={pets}
             renderItem={(pet) => (
               <div className="card">
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <div
+                  style={{ display: "flex", gap: 12, alignItems: "center" }}
+                >
                   {/* Photo thumbnail */}
                   <div
                     style={{
@@ -141,7 +146,11 @@ export default function Dashboard() {
                       <img
                         src={pet.photo_url}
                         alt={pet.name}
-                        style={{ height: "100%", width: "100%", objectFit: "cover" }}
+                        style={{
+                          height: "100%",
+                          width: "100%",
+                          objectFit: "cover",
+                        }}
                       />
                     ) : (
                       <div
@@ -172,11 +181,13 @@ export default function Dashboard() {
                     </div>
 
                     <div className="small" style={{ marginTop: 8 }}>
-                      Species: {pet.species || "—"} &nbsp;|&nbsp; Breed: {pet.breed || "—"} &nbsp;|&nbsp; Sex: {pet.sex || "—"}
+                      Species: {pet.species || "—"} &nbsp;|&nbsp; Breed:{" "}
+                      {pet.breed || "—"} &nbsp;|&nbsp; Sex: {pet.sex || "—"}
                     </div>
 
                     <div className="small" style={{ marginTop: 6 }}>
-                      Birthdate: {pet.dob ? formatDateYmdToUs(pet.dob) : "—"}
+                      Birthdate:{" "}
+                      {pet.dob ? formatDateYmdToUs(pet.dob) : "—"}
                     </div>
                   </div>
                 </div>

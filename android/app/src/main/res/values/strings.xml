@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Fur Majesty</string>
+    <string name="title_activity_main">Fur Majesty</string>
+    <string name="package_name">com.draiochtstudios.furmajesty</string>
+    <string name="custom_url_scheme">com.draiochtstudios.furmajesty</string>
+</resources>

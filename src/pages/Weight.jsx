@@ -28,13 +28,14 @@ export default function WeightPage() {
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
 
+  // Load pets (deps include petId because we branch on it inside)
   useEffect(() => {
     (async () => {
       const p = await listPets();
-      setPets(p);
-      if (p.length && !petId) setPetId(p[0].id);
+      setPets(p || []);
+      if (p?.length && !petId) setPetId(p[0].id);
     })().catch(console.error);
-  }, []); // load once
+  }, [petId]); // ✅ satisfies eslint-react-hooks
 
   // Load history when pet changes
   useEffect(() => {
@@ -118,7 +119,7 @@ export default function WeightPage() {
         <input
           type="date"
           value={date}
-          onChange={(e) => setDate(e.target.value)} // keep raw "YYYY-MM-DD"
+          onChange={(e) => setDate(e.target.value)}
           style={{
             width: "100%",
             padding: "10px 12px",
@@ -181,7 +182,7 @@ export default function WeightPage() {
             onClick={onAdd}
             disabled={saving}
             style={{
-              padding: "8px 12px",            // shorter than before
+              padding: "8px 12px",
               border: "1px solid #000",
               background: "#000",
               color: "#e906d3",
@@ -197,7 +198,6 @@ export default function WeightPage() {
 
       {/* HISTORY CARD */}
       <div className="card" style={{ marginTop: 18, padding: 16, borderRadius: 12 }}>
-        {/* Not bold */}
         <div style={{ fontWeight: 400, marginBottom: 10 }}>History</div>
         {loading ? (
           <div>Loading…</div>
@@ -208,7 +208,6 @@ export default function WeightPage() {
             {rows.map((r) => (
               <li key={r.id} style={{ display: "grid", gridTemplateColumns: "1fr auto", alignItems: "center", gap: 10 }}>
                 <div>
-                  {/* Date should NOT be bold */}
                   <div style={{ fontWeight: 400 }}>
                     {new Date(r.date + "T00:00:00").toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" })}
                   </div>

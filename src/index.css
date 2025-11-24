@@ -42,6 +42,7 @@ html, body{
   font-family: var(--font-body);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
+  overflow-x: hidden;           /* 🔒 no sideways scroll */
 }
 
 /* iOS ergonomics */
@@ -49,7 +50,7 @@ input, select, textarea { font-size:16px; }
 body { padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
 .full-height { min-height: calc(var(--vh) * 100); }
 .scroll-y { -webkit-overflow-scrolling: touch; overflow-y: auto; }
-button, .btn, a.btn { min-height:44px; min-width:44px; }   /* global tap targets */
+button, .btn, a.btn { min-height:44px; min-width:44px; }
 button, input, select, textarea { font: inherit; }
 
 /* Header / nav */
@@ -76,6 +77,7 @@ button, input, select, textarea { font: inherit; }
 
 /* Layout */
 .page{
+  width: 100%;
   max-width:var(--page-max);
   margin:22px auto;
   padding:0 var(--gutter);
@@ -169,7 +171,7 @@ hr{ border:0; border-top:1px solid var(--border); margin:16px 0; }
   padding-bottom: 6px;
 }
 .pet-carousel::-webkit-scrollbar{ display:none; }
-.pet-slide{ min-width: 100%; scroll-snap-align: start; }  /* exactly one card */
+.pet-slide{ min-width: 100%; scroll-snap-align: start; }
 
 /* Compact dots row */
 .pet-dots{
@@ -180,7 +182,6 @@ hr{ border:0; border-top:1px solid var(--border); margin:16px 0; }
   padding-top: 8px;
   width: 100%;
 }
-/* 🔒 Override global tap-target min-size for dot buttons */
 .pet-dot-btn{
   appearance: none;
   border: 0;
@@ -188,10 +189,10 @@ hr{ border:0; border-top:1px solid var(--border); margin:16px 0; }
   margin: 0;
   background: transparent;
   cursor: pointer;
-  width: 20px;               /* small wrapper so spacing stays tight */
+  width: 20px;
   height: 20px;
-  min-width: 0 !important;   /* override global 44px */
-  min-height: 0 !important;  /* override global 44px */
+  min-width: 0 !important;
+  min-height: 0 !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -206,13 +207,12 @@ hr{ border:0; border-top:1px solid var(--border); margin:16px 0; }
 details summary { list-style: none; }
 details summary::-webkit-details-marker { display: none; }
 
-/* Optional helper: summary text look */
 .summary-clean{
   cursor:pointer; font-weight:700;
   display:inline-block;
 }
 
-/* Collapsible summary chevron (RIGHT, direction switches) */
+/* Collapsible summary chevron */
 details > summary.summary-clean {
   position: relative;
   padding-right: 28px;
@@ -242,7 +242,7 @@ details[open] > summary.summary-clean::after {
 
 .burger-icon span {
   display: block;
-  width: 26px;          /* narrower than button width */
-  height: 2px;          /* thin line */
+  width: 26px;
+  height: 2px;
   background: var(--accent);
 }

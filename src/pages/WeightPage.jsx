@@ -1,5 +1,5 @@
-// src/pages/WeightPage.jsx
-import React, { useEffect, useMemo, useState } from "react";
+// FILE: src/pages/WeightPage.jsx
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import {
   listWeightsForPet,
@@ -24,14 +24,14 @@ export default function WeightPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [, setError] = useState(""); // we only need the setter for alerts
 
   const selectedPet = useMemo(
     () => pets.find((p) => p.id === petId) || null,
     [pets, petId]
   );
 
-  // Load pets once
+  // Load pets (include petId in deps because we check it inside)
   useEffect(() => {
     let active = true;
     (async () => {
@@ -60,7 +60,7 @@ export default function WeightPage() {
     return () => {
       active = false;
     };
-  }, []); // load once
+  }, [petId]); // ✅ satisfies eslint-react-hooks
 
   // Load weights when pet changes
   useEffect(() => {
