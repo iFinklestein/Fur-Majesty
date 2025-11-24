@@ -10,7 +10,6 @@ export default function AddPetForm({ onCreated, onCancel }) {
   const formRef = useRef(null);
 
   const [name, setName] = useState("");
-  const [species, setSpecies] = useState("");
   const [breed, setBreed] = useState("");
   const [sex, setSex] = useState("");
   const [dob, setDob] = useState("");
@@ -26,8 +25,13 @@ export default function AddPetForm({ onCreated, onCancel }) {
   };
 
   const resetForm = () => {
-    setName(""); setSpecies(""); setBreed(""); setSex(""); setDob("");
-    setPhotoFile(null); setPreview(""); setMsg("");
+    setName("");
+    setBreed("");
+    setSex("");
+    setDob("");
+    setPhotoFile(null);
+    setPreview("");
+    setMsg("");
   };
 
   const closeNearestDetails = () => {
@@ -43,8 +47,8 @@ export default function AddPetForm({ onCreated, onCancel }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !species.trim()) {
-      setMsg("Name and species are required.");
+    if (!name.trim()) {
+      setMsg("Name is required.");
       return;
     }
     setBusy(true);
@@ -56,7 +60,6 @@ export default function AddPetForm({ onCreated, onCancel }) {
 
       const pet = await Pet.create({
         name: name.trim(),
-        species: species.trim(),
         breed: breed.trim() || null,
         sex: sex.trim() || null,
         dob: dob || null,
@@ -102,17 +105,19 @@ export default function AddPetForm({ onCreated, onCancel }) {
     fontWeight: 700,
     padding: "8px 12px",
   };
-  const btnOutline = {
-    borderRadius: 0,
-    border: "1px solid #000",
-    background: "#fff",
-    color: "#000",
-    fontWeight: 700,
-    padding: "8px 12px",
+
+  // Cancel now uses same brand treatment as Add
+  const btnCancel = {
+    ...btnPrimary,
   };
 
   return (
-    <form ref={formRef} onSubmit={submit} className="grid">
+    <form
+      ref={formRef}
+      onSubmit={submit}
+      className="grid"
+      style={{ maxWidth: "100%" }}
+    >
       <input
         type="text"
         placeholder="Name"
@@ -120,42 +125,56 @@ export default function AddPetForm({ onCreated, onCancel }) {
         onChange={(e) => setName(e.target.value)}
         required
       />
-      <input
-        type="text"
-        placeholder="Species"
-        value={species}
-        onChange={(e) => setSpecies(e.target.value)}
-        required
-      />
+
       <input
         type="text"
         placeholder="Breed"
         value={breed}
         onChange={(e) => setBreed(e.target.value)}
       />
+
       <input
         type="text"
         placeholder="Sex"
         value={sex}
         onChange={(e) => setSex(e.target.value)}
       />
-      <input
-        type="date"
-        placeholder="Birthdate"
-        value={dob}
-        onChange={(e) => setDob(e.target.value)}
-      />
+
+      <label style={{ marginTop: 4 }}>
+        <div>Birthdate (optional)</div>
+        <input
+          type="date"
+          value={dob}
+          onChange={(e) => setDob(e.target.value)}
+        />
+      </label>
 
       <div style={{ margin: "6px 0" }}>
-        <label htmlFor="pet-photo" style={{ display: "block", marginBottom: 6 }}>
+        <label
+          htmlFor="pet-photo"
+          style={{ display: "block", marginBottom: 6 }}
+        >
           Photo (optional)
         </label>
-        <input id="pet-photo" type="file" accept="image/*" onChange={onFile} />
+        <input
+          id="pet-photo"
+          type="file"
+          accept="image/*"
+          onChange={onFile}
+          style={{ width: "100%" }}
+        />
         {preview ? (
           <img
             src={preview}
             alt="Preview"
-            style={{ marginTop: 8, height: 72, width: 72, objectFit: "cover", borderRadius: 12, border: "1px solid #ddd" }}
+            style={{
+              marginTop: 8,
+              height: 72,
+              width: 72,
+              objectFit: "cover",
+              borderRadius: 12,
+              border: "1px solid #ddd",
+            }}
           />
         ) : null}
       </div>
@@ -164,7 +183,7 @@ export default function AddPetForm({ onCreated, onCancel }) {
         <button type="submit" disabled={busy} style={btnPrimary}>
           {busy ? "Saving…" : "Add"}
         </button>
-        <button type="button" onClick={handleCancel} style={btnOutline}>
+        <button type="button" onClick={handleCancel} style={btnCancel}>
           Cancel
         </button>
       </div>
@@ -181,8 +200,10 @@ AddPetForm.propTypes = {
 
 function cryptoRandom() {
   const arr = new Uint32Array(4);
-  (typeof crypto !== "undefined" && crypto.getRandomValues)
+  (typeof crypto !== "undefined" && crypto.getRandomValues
     ? crypto.getRandomValues(arr)
-    : arr.fill(Math.floor(Math.random() * 2 ** 32));
-  return Array.from(arr).map(n => n.toString(16).padStart(8, "0")).join("");
+    : arr.fill(Math.floor(Math.random() * 2 ** 32)));
+  return Array.from(arr)
+    .map((n) => n.toString(16).padStart(8, "0"))
+    .join("");
 }
