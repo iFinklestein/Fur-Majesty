@@ -23,7 +23,9 @@ export default function DoseLogForm({ onSaved, onCancel }) {
   const [petId, setPetId] = useState("");
   const [meds, setMeds] = useState([]);
   const [medicationId, setMedicationId] = useState("");
-  const [givenAt, setGivenAt] = useState(() => new Date().toISOString().slice(0, 16));
+  const [givenAt, setGivenAt] = useState(
+    () => new Date().toISOString().slice(0, 16)
+  );
   const [amount, setAmount] = useState("1");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -56,12 +58,21 @@ export default function DoseLogForm({ onSaved, onCancel }) {
     return () => window.removeEventListener("dose-intent", handle);
   }, []);
 
-  const petOptions = useMemo(() => pets.map((p) => ({ value: p.id, label: p.name })), [pets]);
-  const medOptions = useMemo(() => meds.map((m) => ({ value: m.id, label: m.name })), [meds]);
+  const petOptions = useMemo(
+    () => pets.map((p) => ({ value: p.id, label: p.name })),
+    [pets]
+  );
+  const medOptions = useMemo(
+    () => meds.map((m) => ({ value: m.id, label: m.name })),
+    [meds]
+  );
 
   async function submit(e) {
     e.preventDefault();
-    if (!petId || !medicationId) { alert("Pet and medication are required."); return; }
+    if (!petId || !medicationId) {
+      alert("Pet and medication are required.");
+      return;
+    }
     setSaving(true);
     try {
       await DoseLog.add({
@@ -81,6 +92,16 @@ export default function DoseLogForm({ onSaved, onCancel }) {
       setSaving(false);
     }
   }
+
+  const primaryBtnStyle = {
+    borderRadius: 0,
+    border: "1px solid #000",
+    background: "#000",
+    color: "var(--accent, #e906d3)",
+    fontWeight: 700,
+    padding: "8px 12px",
+    minWidth: 110,
+  };
 
   return (
     <form onSubmit={submit}>
@@ -147,7 +168,7 @@ export default function DoseLogForm({ onSaved, onCancel }) {
             type="submit"
             disabled={saving}
             className="btn"
-            style={{ minWidth: 110 }}
+            style={primaryBtnStyle}
           >
             {saving ? "Saving..." : "Add"}
           </button>
@@ -156,7 +177,7 @@ export default function DoseLogForm({ onSaved, onCancel }) {
               type="button"
               onClick={onCancel}
               className="btn"
-              style={{ background: "#fff", color: "#000", border: "1px solid #000", minWidth: 110 }}
+              style={primaryBtnStyle}
             >
               Cancel
             </button>

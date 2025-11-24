@@ -3,13 +3,20 @@ import { supabase } from "@/lib/supabaseClient";
 
 /** Frequency options used across UI */
 export const FREQUENCIES = [
-  { value: "once",   label: "Once" },
-  { value: "daily",  label: "Daily" },
-  { value: "bid",    label: "Twice daily" },
-  { value: "tid",    label: "Three times daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "monthly",label: "Monthly" },
+  { value: "once",    label: "Once" },
+  { value: "daily",   label: "Daily" },
+  { value: "bid",     label: "Twice daily" },
+  { value: "tid",     label: "Three times daily" },
+  { value: "weekly",  label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
 ];
+
+// sanity check so anything weird falls back to "daily"
+function normalizeFrequency(freq) {
+  if (!freq) return "daily";
+  const exists = FREQUENCIES.some((f) => f.value === freq);
+  return exists ? freq : "daily";
+}
 
 /* -----------------------------------------------------------
  * Medications CRUD
@@ -32,7 +39,7 @@ export const Meds = {
       name,
       dosage,
       time_of_day: timeOfDay || null,
-      frequency,
+      frequency: normalizeFrequency(frequency),
       notes: notes || null,
     };
     const { data, error } = await supabase
@@ -48,7 +55,9 @@ export const Meds = {
     const payload = {
       ...(patch.name       !== undefined && { name:        patch.name }),
       ...(patch.dosage     !== undefined && { dosage:      patch.dosage }),
-      ...(patch.frequency  !== undefined && { frequency:   patch.frequency }),
+      ...(patch.frequency  !== undefined && {
+        frequency: normalizeFrequency(patch.frequency),
+      }),
       ...(patch.timeOfDay  !== undefined && { time_of_day: patch.timeOfDay }),
       ...(patch.notes      !== undefined && { notes:       patch.notes }),
     };
@@ -60,6 +69,15 @@ export const Meds = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  async remove(id) {
+    const { error } = await supabase
+      .from("medications")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+    return true;
   },
 };
 
