@@ -7,6 +7,31 @@ import {
   deleteGroomingLog,
 } from "@/api/grooming.js";
 
+/* -------------------------------------------
+   Brand Styles
+-------------------------------------------- */
+const BRAND_MAGENTA = "#e906d3";
+
+const btn = {
+  borderRadius: 0,
+  border: "1px solid #000",
+  background: "#000",
+  color: BRAND_MAGENTA,
+  fontWeight: 700,
+  padding: "10px 20px",
+  minWidth: 70,
+  cursor: "pointer",
+};
+
+const btnSecondary = {
+  ...btn,
+  background: "#000",
+  color: BRAND_MAGENTA,
+};
+
+const CHEV_BG =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>\")";
+
 const GROOMING_TYPES = [
   { value: "full_groom", label: "Full Groom" },
   { value: "bath_only", label: "Bath Only" },
@@ -14,10 +39,7 @@ const GROOMING_TYPES = [
   { value: "teeth_cleaning", label: "Teeth Cleaning" },
 ];
 
-// Big chevron (matching Dose History)
-const CHEV_BG =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>\")";
-
+// yyyy-mm-dd local
 function todayLocal() {
   const d = new Date();
   const y = d.getFullYear();
@@ -26,11 +48,11 @@ function todayLocal() {
   return `${y}-${m}-${day}`;
 }
 
+// Display mm/dd/yyyy
 function renderUS(dateStr) {
   if (!dateStr) return "";
   const [y, m, d] = dateStr.split("-").map((n) => parseInt(n, 10));
-  const date = new Date(y, (m || 1) - 1, d || 1);
-  return date.toLocaleDateString(undefined, {
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -40,6 +62,8 @@ function renderUS(dateStr) {
 export default function Grooming() {
   const [pets, setPets] = useState([]);
   const [petId, setPetId] = useState("");
+  const [showForm, setShowForm] = useState(false);
+
   const [date, setDate] = useState(todayLocal());
   const [groomType, setGroomType] = useState(GROOMING_TYPES[0].value);
 
@@ -47,50 +71,47 @@ export default function Grooming() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  /* -----------------------------
+     Load Pets
+  ------------------------------ */
   useEffect(() => {
-    let alive = true;
     (async () => {
-      try {
-        const list = await listPets();
-        if (!alive) return;
-        setPets(list || []);
-        if (list?.length && !petId) setPetId(list[0].id);
-      } catch (e) {
-        alert(e.message ?? "Failed to load pets");
-      }
+      const list = await listPets();
+      setPets(list || []);
+      if (list?.length && !petId) setPetId(list[0].id);
     })();
-    return () => { alive = false; };
   }, [petId]);
 
+  /* -----------------------------
+     Load Grooming Records
+  ------------------------------ */
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      if (!petId) {
-        setRows([]);
-        return;
-      }
-      setLoading(true);
-      try {
-        const data = await listGroomsForPet(petId);
-        if (alive) setRows(data || []);
-      } catch (e) {
-        alert(e.message ?? "Failed to load grooming logs");
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => { alive = false; };
+    if (!petId) return;
+    setLoading(true);
+    listGroomsForPet(petId)
+      .then((d) => setRows(d || []))
+      .finally(() => setLoading(false));
   }, [petId]);
 
+  /* -----------------------------
+     Add Groom Entry
+  ------------------------------ */
   async function handleAdd(e) {
     e.preventDefault();
     if (!petId) return;
+
     setSaving(true);
     try {
-      await addGroomingLog({ pet_id: petId, date, type: groomType });
+      await addGroomingLog({
+        pet_id: petId,
+        date,
+        type: groomType,
+      });
       const data = await listGroomsForPet(petId);
       setRows(data || []);
       setDate(todayLocal());
+      setGroomType(GROOMING_TYPES[0].value);
+      setShowForm(false);
     } catch (e) {
       alert(e.message ?? "Failed to add grooming log");
     } finally {
@@ -98,7 +119,11 @@ export default function Grooming() {
     }
   }
 
+  /* -----------------------------
+     Delete Groom Entry
+  ------------------------------ */
   async function handleDelete(id) {
+    if (!window.confirm("Delete this grooming entry?")) return;
     try {
       await deleteGroomingLog(id);
       const data = await listGroomsForPet(petId);
@@ -108,53 +133,75 @@ export default function Grooming() {
     }
   }
 
+  /* -----------------------------
+     UI
+  ------------------------------ */
   return (
-    <div className="page">
-      <h2 style={{ display: "none" }}>Grooming</h2>
+    <div className="page" style={{ paddingTop: 8 }}>
+      {/* PET SELECT + ADD BUTTON */}
+      <div className="card" style={{ padding: 12, maxWidth: 460, margin: "0 auto" }}>
+        <label className="flex flex-col" style={{ marginBottom: 8 }}>
+          <span className="text-sm text-gray-600">Pet</span>
+          <select
+            value={petId}
+            onChange={(e) => setPetId(e.target.value)}
+            className="rounded border px-3 py-2 w-full"
+            style={{
+              WebkitAppearance: "none",
+              appearance: "none",
+              backgroundImage: CHEV_BG,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 10px center",
+              backgroundSize: "18px 18px",
+            }}
+          >
+            {pets.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </label>
 
-      {/* Form */}
-      <form className="card" onSubmit={handleAdd}>
-        <div className="grid-3">
-          <label>
-            <div>Pet</div>
-            <select
-              value={petId}
-              onChange={(e) => setPetId(e.target.value)}
-              className="select-chevron"
-              style={{
-                width: "100%",
-                WebkitAppearance: "none",
-                appearance: "none",
-                backgroundImage: CHEV_BG,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 10px center",
-                backgroundSize: "18px 18px",
-              }}
-            >
-              {pets.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </label>
+        <div style={{ display: "grid", placeItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            style={btn}
+          >
+            Add Grooming
+          </button>
+        </div>
+      </div>
 
-          <label>
-            <div>Date</div>
+      {/* ------------------- FORM ------------------- */}
+      {showForm && (
+        <form
+          onSubmit={handleAdd}
+          className="card"
+          style={{
+            padding: 14,
+            maxWidth: 460,
+            margin: "16px auto",
+          }}
+        >
+          {/* Date */}
+          <label className="flex flex-col" style={{ marginBottom: 8 }}>
+            <span className="text-sm text-gray-600">Date</span>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              style={{ width: "100%" }}
+              className="rounded border px-3 py-2 w-full"
             />
           </label>
 
-          <label>
-            <div>Type</div>
+          {/* Type */}
+          <label className="flex flex-col" style={{ marginBottom: 12 }}>
+            <span className="text-sm text-gray-600">Type</span>
             <select
               value={groomType}
               onChange={(e) => setGroomType(e.target.value)}
-              className="select-chevron"
+              className="rounded border px-3 py-2 w-full"
               style={{
-                width: "100%",
                 WebkitAppearance: "none",
                 appearance: "none",
                 backgroundImage: CHEV_BG,
@@ -168,46 +215,60 @@ export default function Grooming() {
               ))}
             </select>
           </label>
-        </div>
 
-        <div style={{ marginTop: 12, display: "flex", justifyContent: "center" }}>
-          <button type="submit" disabled={saving}>
-            {saving ? "Saving…" : "Add"}
-          </button>
-        </div>
-      </form>
+          {/* Action Buttons */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 10,
+              marginTop: 10,
+            }}
+          >
+            <button type="submit" disabled={saving} style={btn}>
+              {saving ? "Saving…" : "Add"}
+            </button>
 
-      {/* Appointments */}
-      <div className="card" style={{ marginTop: 16 }}>
-        {/* 🚫 remove bold */}
-        <h3 style={{ marginBottom: 8, fontWeight: 400 }}>Appointments</h3>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              style={btnSecondary}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
 
-        {loading && <div>Loading…</div>}
-        {!loading && rows.length === 0 && <div>No Grooming appointments</div>}
+      {/* ------------------- RECORDS ------------------- */}
+      <div className="card" style={{ padding: 12, maxWidth: 460, margin: "16px auto" }}>
+        <div style={{ fontWeight: 400, marginBottom: 6 }}>Records</div>
 
-        {!loading && rows.length > 0 && (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left", padding: 8, fontWeight: 400 }}>Date</th>
-                <th style={{ textAlign: "left", padding: 8, fontWeight: 400 }}>Type</th>
-                <th style={{ textAlign: "right", padding: 8, fontWeight: 400 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} style={{ borderTop: "1px solid #eee" }}>
-                  <td style={{ padding: 8 }}>{renderUS(r.date)}</td>
-                  <td style={{ padding: 8 }}>
-                    {GROOMING_TYPES.find((t) => t.value === r.type)?.label ?? r.type}
-                  </td>
-                  <td style={{ padding: 8, textAlign: "right" }}>
-                    <button onClick={() => handleDelete(r.id)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {loading ? (
+          <div>Loading…</div>
+        ) : rows.length === 0 ? (
+          <div>No grooming appointments</div>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10 }}>
+            {rows.map((r) => (
+              <li key={r.id} className="card" style={{ padding: 12 }}>
+                <div style={{ marginBottom: 6 }}>
+                  <div>{renderUS(r.date)}</div>
+                  <div>{GROOMING_TYPES.find((t) => t.value === r.type)?.label}</div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(r.id)}
+                    style={btn}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>
