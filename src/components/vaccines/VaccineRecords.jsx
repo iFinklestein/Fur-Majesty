@@ -10,6 +10,17 @@ import {
 const CHEV_BG =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 8 L12 16 L20 8' stroke='black' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>\")";
 
+const BRAND_MAGENTA = "#e906d3";
+const BRAND_BTN = {
+  borderRadius: 0,
+  border: "1px solid #000",
+  background: "#000",
+  color: BRAND_MAGENTA,
+  fontWeight: 700,
+  padding: "6px 18px",
+  minWidth: 100,
+};
+
 export default function VaccineRecords() {
   const [pets, setPets] = useState([]);
   const [petId, setPetId] = useState("");
@@ -270,13 +281,9 @@ export default function VaccineRecords() {
                           url && window.open(url, "_blank", "noopener")
                         }
                         style={{
-                          borderRadius: 0,
-                          border: "1px solid #000",
-                          background: "#000",
-                          color: "#e906d3",
-                          fontWeight: 700,
-                          padding: "6px 10px",
+                          ...BRAND_BTN,
                           minWidth: 70,
+                          padding: "6px 10px",
                         }}
                         title={url ? "Open attachment" : "No file"}
                       >
@@ -286,13 +293,9 @@ export default function VaccineRecords() {
                         type="button"
                         onClick={() => handleDelete(r.id)}
                         style={{
-                          borderRadius: 0,
-                          border: "1px solid #000",
-                          background: "#000",
-                          color: "#e906d3",
-                          fontWeight: 700,
-                          padding: "6px 10px",
+                          ...BRAND_BTN,
                           minWidth: 70,
+                          padding: "6px 10px",
                         }}
                       >
                         Delete
@@ -310,109 +313,104 @@ export default function VaccineRecords() {
       {showForm && (
         <div
           className="card"
-          style={{ marginTop: 16, maxWidth: 460, marginInline: "auto" }}
+          style={{
+            marginTop: 16,
+            maxWidth: 460,
+            marginInline: "auto",
+            padding: 16,
+          }}
           data-vaccine-form
         >
           <h2 style={{ marginTop: 0, marginBottom: 10, fontWeight: 400 }}>
             Add Vaccine
           </h2>
 
-          <div className="grid" style={{ gap: 8 }}>
-            {/* Vaccine */}
-            <label className="flex flex-col">
-              <span className="text-sm text-gray-600">Vaccine</span>
-              <select
-                value={vaccine}
-                onChange={(e) => setVaccine(e.target.value)}
-                className="rounded border px-3 py-2 w-full"
-                style={{
-                  WebkitAppearance: "none",
-                  appearance: "none",
-                  backgroundImage: CHEV_BG,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 10px center",
-                  backgroundSize: "18px 18px",
-                }}
-              >
-                <option value="" disabled>
-                  Choose a vaccine…
-                </option>
-                {COMMON_VACCINES.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {/* Date given */}
-            <label className="flex flex-col">
-              <span className="text-sm text-gray-600">Date given</span>
-              <input
-                type="date"
-                value={givenOn}
-                onChange={(e) => setGivenOn(e.target.value)}
-                className="rounded border px-3 py-2 w-full"
-              />
-            </label>
-
-            {/* Expires (auto) */}
-            <label className="flex flex-col">
-              <span className="text-sm text-gray-600">Expires (auto)</span>
-              <input
-                type="text"
-                value={formatMDY(expiresOn)}
-                readOnly
-                className="rounded border px-3 py-2 w-full"
-                style={{ background: "#f7f7f7", color: "#555" }}
-                aria-label="Expires (auto-calculated)"
-                title="Auto-calculated"
-              />
-            </label>
-
-            {/* File */}
-            <label className="flex flex-col">
-              <span className="text-sm text-gray-600">
-                Attachment (optional)
-              </span>
-              <input
-                type="file"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
-            </label>
-
-            {/* Buttons */}
-            <div
+          {/* stacked fields, same pattern as other pages */}
+          <label className="flex flex-col" style={{ marginBottom: 8 }}>
+            <span className="text-sm text-gray-600">Vaccine</span>
+            <select
+              value={vaccine}
+              onChange={(e) => setVaccine(e.target.value)}
+              className="rounded border px-3 py-2 w-full"
               style={{
-                display: "flex",
-                justifyContent: "center",
-                gap: 10,
-                marginTop: 8,
+                WebkitAppearance: "none",
+                appearance: "none",
+                backgroundImage: CHEV_BG,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 10px center",
+                backgroundSize: "18px 18px",
               }}
             >
-              <button
-                type="button"
-                onClick={handleAdd}
-                disabled={saving}
-                className="btn"
-                style={{ minWidth: 110 }}
-              >
-                {saving ? "Saving…" : "Add"}
-              </button>
-              <button
-                type="button"
-                onClick={cancelForm}
-                className="btn"
-                style={{
-                  background: "#fff",
-                  color: "#000",
-                  border: "1px solid #000",
-                  minWidth: 110,
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+              <option value="" disabled>
+                Choose a vaccine…
+              </option>
+              {COMMON_VACCINES.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col" style={{ marginBottom: 8 }}>
+            <span className="text-sm text-gray-600">Date given</span>
+            <input
+              type="date"
+              value={givenOn}
+              onChange={(e) => setGivenOn(e.target.value)}
+              className="rounded border px-3 py-2 w-full"
+            />
+          </label>
+
+          <label className="flex flex-col" style={{ marginBottom: 8 }}>
+            <span className="text-sm text-gray-600">Expires (auto)</span>
+            <input
+              type="text"
+              value={formatMDY(expiresOn)}
+              readOnly
+              className="rounded border px-3 py-2 w-full"
+              style={{ background: "#f7f7f7", color: "#555" }}
+              aria-label="Expires (auto-calculated)"
+              title="Auto-calculated"
+            />
+          </label>
+
+          <label className="flex flex-col" style={{ marginBottom: 8 }}>
+            <span className="text-sm text-gray-600">
+              Attachment (optional)
+            </span>
+            <input
+              type="file"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+            />
+          </label>
+
+          {/* Buttons */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 10,
+              marginTop: 8,
+            }}
+          >
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={saving}
+              className="btn"
+              style={BRAND_BTN}
+            >
+              {saving ? "Saving…" : "Add"}
+            </button>
+            <button
+              type="button"
+              onClick={cancelForm}
+              className="btn"
+              style={BRAND_BTN}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
